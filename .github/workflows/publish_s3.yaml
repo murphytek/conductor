@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   publish-s3:
-    runs-on: murphytek-k8s
+    runs-on: ubuntu-latest
     name: Build and Publish Server JAR to S3
     steps:
       - uses: actions/checkout@v5

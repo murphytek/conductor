@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: Deploy docs
-    runs-on: murphytek-k8s
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
