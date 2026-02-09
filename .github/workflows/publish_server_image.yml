@@ -1,6 +1,9 @@
 name: Publish Conductor Server Image
 
 on:
+  push:
+    branches:
+      - codex/conductor-3.22.0-rc1-publish
   workflow_dispatch:
     inputs:
       version:
@@ -29,7 +32,11 @@ jobs:
         run: |
           VERSION="${{ github.event.inputs.version }}"
           if [[ -z "$VERSION" ]]; then
-            VERSION="${{ github.ref_name }}"
+            if [[ "${{ github.event_name }}" == "release" ]]; then
+              VERSION="${{ github.ref_name }}"
+            else
+              VERSION="3.22.0-rc1"
+            fi
           fi
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
