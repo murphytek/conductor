@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write  # for release-drafter/release-drafter to create a github release
       pull-requests: write  # for release-drafter/release-drafter to add label to PR
-    runs-on: ubuntu-latest
+    runs-on: murphytek-k8s
     steps:
       - uses: release-drafter/release-drafter@v6
         env:

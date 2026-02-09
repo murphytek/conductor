@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: murphytek-k8s
     name: Gradle Build and Publish
     steps:
       - uses: actions/checkout@v5
@@ -44,7 +44,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
 
   publish-docker:
-    runs-on: ubuntu-latest
+    runs-on: murphytek-k8s
     name: Gradle Build and Publish to Container Registry
     steps:
       - uses: actions/checkout@v3
