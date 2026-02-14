@@ -46,8 +46,7 @@ public class KafkaWorkflowStatusPublisherConfiguration {
             @Value("${conductor.workflow-status-listener.kafka.topic:conductor.workflow.status.v1}")
                     String topic) {
         LOGGER.info("Configuring KafkaWorkflowStatusPublisher for topic '{}'", topic);
-        KafkaObservableQueue queue =
-                new KafkaObservableQueue.Builder(kafkaProperties).build(topic);
+        KafkaObservableQueue queue = new KafkaObservableQueue.Builder(kafkaProperties).build(topic);
         return new KafkaWorkflowStatusPublisher(queue, objectMapper);
     }
 }
