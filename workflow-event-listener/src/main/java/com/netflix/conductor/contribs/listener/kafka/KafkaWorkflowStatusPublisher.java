@@ -78,6 +78,26 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
         publishEvent(WorkflowEventType.RERAN, workflow);
     }
 
+    /**
+     * Always publish, regardless of the per-workflow {@code workflowStatusListenerEnabled} flag.
+     * This makes the Kafka event bus global so downstream services can react to all workflow
+     * lifecycle events.
+     */
+    @Override
+    public void onWorkflowCompletedIfEnabled(WorkflowModel workflow) {
+        onWorkflowCompleted(workflow);
+    }
+
+    @Override
+    public void onWorkflowTerminatedIfEnabled(WorkflowModel workflow) {
+        onWorkflowTerminated(workflow);
+    }
+
+    @Override
+    public void onWorkflowFinalizedIfEnabled(WorkflowModel workflow) {
+        onWorkflowFinalized(workflow);
+    }
+
     @Override
     public void onWorkflowCompleted(WorkflowModel workflow) {
         publishEvent(WorkflowEventType.COMPLETED, workflow);
