@@ -33,14 +33,14 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 @ContextConfiguration(classes = [TestObjectMapperConfiguration.class])
-@Requires({
+@Requires(value = {
     // Skip Cassandra container specs when Docker is unavailable in CI.
     try {
         DockerClientFactory.instance().isDockerAvailable()
     } catch (Throwable ignored) {
         false
     }
-})
+}, inherited = true)
 @Testcontainers
 @PackageScope
 abstract class CassandraSpec extends Specification {
