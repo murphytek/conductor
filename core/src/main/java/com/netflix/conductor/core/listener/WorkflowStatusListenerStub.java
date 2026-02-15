@@ -36,4 +36,19 @@ public class WorkflowStatusListenerStub implements WorkflowStatusListener {
     public void onWorkflowFinalized(WorkflowModel workflow) {
         LOGGER.debug("Workflow {} is finalized", workflow.getWorkflowId());
     }
+
+    @Override
+    public void onWorkflowStarted(WorkflowModel workflow) {
+        LOGGER.debug("Workflow {} is started", workflow.getWorkflowId());
+    }
+
+    @Override
+    public void onWorkflowPaused(WorkflowModel workflow) {
+        LOGGER.debug("Workflow {} is paused", workflow.getWorkflowId());
+    }
+
+    @Override
+    public void onWorkflowResumed(WorkflowModel workflow) {
+        LOGGER.debug("Workflow {} is resumed", workflow.getWorkflowId());
+    }
 }

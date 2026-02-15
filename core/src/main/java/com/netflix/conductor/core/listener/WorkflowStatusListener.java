@@ -40,4 +40,10 @@ public interface WorkflowStatusListener {
     void onWorkflowTerminated(WorkflowModel workflow);
 
     default void onWorkflowFinalized(WorkflowModel workflow) {}
+
+    default void onWorkflowStarted(WorkflowModel workflow) {}
+
+    default void onWorkflowPaused(WorkflowModel workflow) {}
+
+    default void onWorkflowResumed(WorkflowModel workflow) {}
 }

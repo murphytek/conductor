@@ -13,6 +13,7 @@
 package com.netflix.conductor.contribs.listener.kafka;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import com.netflix.conductor.kafkaeq.eventqueue.KafkaObservableQueue;
 import com.netflix.conductor.model.WorkflowModel;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -80,10 +82,29 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener {
         publish(workflow, "FINALIZED");
     }
 
+    @Override
+    public void onWorkflowStarted(WorkflowModel workflow) {
+        publish(workflow, "STARTED");
+    }
+
+    @Override
+    public void onWorkflowPaused(WorkflowModel workflow) {
+        publish(workflow, "PAUSED");
+    }
+
+    @Override
+    public void onWorkflowResumed(WorkflowModel workflow) {
+        publish(workflow, "RESUMED");
+    }
+
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+
     private void publish(WorkflowModel workflow, String eventType) {
         try {
             WorkflowSummary summary = new WorkflowSummary(workflow.toWorkflow());
-            String json = objectMapper.writeValueAsString(summary);
+            Map<String, Object> payload = objectMapper.convertValue(summary, MAP_TYPE);
+            payload.put("eventType", eventType);
+            String json = objectMapper.writeValueAsString(payload);
             Message message = new Message(workflow.getWorkflowId(), json, null);
             kafkaQueue.publish(Collections.singletonList(message));
             LOGGER.info(

@@ -1259,6 +1259,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             }
             workflow.setStatus(status);
             executionDAOFacade.updateWorkflow(workflow);
+            workflowStatusListener.onWorkflowPaused(workflow);
         } finally {
             executionLockService.releaseLock(workflowId);
         }
@@ -1299,6 +1300,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
                 workflow.getPriority(),
                 properties.getWorkflowOffsetTimeout().getSeconds());
         executionDAOFacade.updateWorkflow(workflow);
+        workflowStatusListener.onWorkflowResumed(workflow);
         decide(workflowId);
     }
 
@@ -1908,6 +1910,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
                     workflow.getWorkflowName(),
                     workflow.getWorkflowId());
             executionDAOFacade.populateWorkflowAndTaskPayloadData(workflow);
+            workflowStatusListener.onWorkflowStarted(workflow);
             decide(workflow);
         } finally {
             executionLockService.releaseLock(workflow.getWorkflowId());
