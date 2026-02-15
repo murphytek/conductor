@@ -16,6 +16,7 @@ import java.time.Duration
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ContextConfiguration
+import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.CassandraContainer
 import org.testcontainers.spock.Testcontainers
 
@@ -27,10 +28,19 @@ import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.driver.core.Session
 import com.fasterxml.jackson.databind.ObjectMapper
 import groovy.transform.PackageScope
+import spock.lang.Requires
 import spock.lang.Shared
 import spock.lang.Specification
 
 @ContextConfiguration(classes = [TestObjectMapperConfiguration.class])
+@Requires({
+    // Skip Cassandra container specs when Docker is unavailable in CI.
+    try {
+        DockerClientFactory.instance().isDockerAvailable()
+    } catch (Throwable ignored) {
+        false
+    }
+})
 @Testcontainers
 @PackageScope
 abstract class CassandraSpec extends Specification {
