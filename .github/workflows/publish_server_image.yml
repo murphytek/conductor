@@ -4,12 +4,13 @@ on:
   push:
     branches:
       - codex/conductor-3.22.0-rc1-publish
+      - conductor-3.22.0-beta
   workflow_dispatch:
     inputs:
       version:
-        description: "Image tag to publish (example: 3.22.0-rc1)"
+        description: "Image tag to publish (example: 3.22.0-beta)"
         required: true
-        default: "3.22.0-rc1"
+        default: "3.22.0-beta"
   release:
     types:
       - released
@@ -35,7 +36,7 @@ jobs:
             if [[ "${{ github.event_name }}" == "release" ]]; then
               VERSION="${{ github.ref_name }}"
             else
-              VERSION="3.22.0-rc1"
+              VERSION="3.22.0-beta"
             fi
           fi
           VERSION="${VERSION#v}"
