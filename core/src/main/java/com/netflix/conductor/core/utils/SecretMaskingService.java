@@ -12,21 +12,16 @@
  */
 package com.netflix.conductor.core.utils;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
- * Masks secret values in task output data. Serializes the output to JSON, replaces all occurrences
- * of each secret value with "***", then deserializes back. This catches secrets in nested
- * structures and concatenated strings.
+ * Masks secret values in task output data by recursively walking the output map and replacing any
+ * string value (or substring) that matches a secret with "***".
  */
 @Component
 @ConditionalOnBean(SecretProvider.class)
@@ -34,14 +29,11 @@ public class SecretMaskingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecretMaskingService.class);
     private static final String MASK = "***";
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final SecretProvider secretProvider;
-    private final ObjectMapper objectMapper;
 
-    public SecretMaskingService(SecretProvider secretProvider, ObjectMapper objectMapper) {
+    public SecretMaskingService(SecretProvider secretProvider) {
         this.secretProvider = secretProvider;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -60,7 +52,6 @@ public class SecretMaskingService {
             return outputData;
         }
 
-        // Filter to only non-empty secret values worth masking
         Collection<String> secretValues =
                 secrets.values().stream().filter(v -> v != null && !v.isEmpty()).toList();
 
@@ -68,22 +59,37 @@ public class SecretMaskingService {
             return outputData;
         }
 
-        try {
-            String json = objectMapper.writeValueAsString(outputData);
-            for (String secretValue : secretValues) {
-                json = json.replace(secretValue, MASK);
-                // Also replace the JSON-escaped form (e.g. quotes become \")
-                String jsonEncoded = objectMapper.writeValueAsString(secretValue);
-                // Strip surrounding quotes to get the inner escaped representation
-                String escapedInner = jsonEncoded.substring(1, jsonEncoded.length() - 1);
-                if (!escapedInner.equals(secretValue)) {
-                    json = json.replace(escapedInner, MASK);
-                }
+        return maskMap(outputData, secretValues);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object maskValue(Object value, Collection<String> secretValues) {
+        if (value instanceof String s) {
+            for (String secret : secretValues) {
+                s = s.replace(secret, MASK);
             }
-            return objectMapper.readValue(json, MAP_TYPE);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to mask secrets in task output, returning original", e);
-            return outputData;
+            return s;
+        } else if (value instanceof Map<?, ?> m) {
+            return maskMap((Map<String, Object>) m, secretValues);
+        } else if (value instanceof List<?> l) {
+            return maskList(l, secretValues);
         }
+        return value;
+    }
+
+    private Map<String, Object> maskMap(Map<String, Object> map, Collection<String> secretValues) {
+        Map<String, Object> result = new LinkedHashMap<>(map.size());
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            result.put(entry.getKey(), maskValue(entry.getValue(), secretValues));
+        }
+        return result;
+    }
+
+    private List<Object> maskList(List<?> list, Collection<String> secretValues) {
+        List<Object> result = new ArrayList<>(list.size());
+        for (Object item : list) {
+            result.add(maskValue(item, secretValues));
+        }
+        return result;
     }
 }

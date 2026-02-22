@@ -60,6 +60,7 @@ public class ParametersUtils {
         this(objectMapper, null);
     }
 
+    @Autowired
     public ParametersUtils(
             ObjectMapper objectMapper, @Autowired(required = false) SecretProvider secretProvider) {
         this.objectMapper = objectMapper;
