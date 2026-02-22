@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * structures and concatenated strings.
  */
 @Component
+@ConditionalOnBean(SecretProvider.class)
 public class SecretMaskingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecretMaskingService.class);
@@ -70,6 +72,13 @@ public class SecretMaskingService {
             String json = objectMapper.writeValueAsString(outputData);
             for (String secretValue : secretValues) {
                 json = json.replace(secretValue, MASK);
+                // Also replace the JSON-escaped form (e.g. quotes become \")
+                String jsonEncoded = objectMapper.writeValueAsString(secretValue);
+                // Strip surrounding quotes to get the inner escaped representation
+                String escapedInner = jsonEncoded.substring(1, jsonEncoded.length() - 1);
+                if (!escapedInner.equals(secretValue)) {
+                    json = json.replace(escapedInner, MASK);
+                }
             }
             return objectMapper.readValue(json, MAP_TYPE);
         } catch (Exception e) {

@@ -56,6 +56,10 @@ public class ParametersUtils {
     private final SecretProvider secretProvider;
     private final TypeReference<Map<String, Object>> map = new TypeReference<>() {};
 
+    public ParametersUtils(ObjectMapper objectMapper) {
+        this(objectMapper, null);
+    }
+
     public ParametersUtils(
             ObjectMapper objectMapper, @Autowired(required = false) SecretProvider secretProvider) {
         this.objectMapper = objectMapper;
