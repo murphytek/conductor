@@ -61,6 +61,8 @@ public class StartWorkflowRequest {
 
     private IdempotencyStrategy idempotencyStrategy;
 
+    private Map<String, String> secretOverrides = new HashMap<>();
+
     public String getIdempotencyKey() {
         return idempotencyKey;
     }
@@ -192,6 +194,19 @@ public class StartWorkflowRequest {
 
     public StartWorkflowRequest withCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+        return this;
+    }
+
+    public Map<String, String> getSecretOverrides() {
+        return secretOverrides;
+    }
+
+    public void setSecretOverrides(Map<String, String> secretOverrides) {
+        this.secretOverrides = secretOverrides;
+    }
+
+    public StartWorkflowRequest withSecretOverrides(Map<String, String> secretOverrides) {
+        this.secretOverrides = secretOverrides;
         return this;
     }
 }

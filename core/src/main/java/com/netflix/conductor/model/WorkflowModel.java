@@ -108,6 +108,8 @@ public class WorkflowModel {
 
     private Status previousStatus;
 
+    private Map<String, String> secretOverrides = new HashMap<>();
+
     @JsonIgnore private Map<String, Object> input = new HashMap<>();
 
     @JsonIgnore private Map<String, Object> output = new HashMap<>();
@@ -407,6 +409,14 @@ public class WorkflowModel {
 
     public void setFailedTaskId(String failedTaskId) {
         this.failedTaskId = failedTaskId;
+    }
+
+    public Map<String, String> getSecretOverrides() {
+        return secretOverrides;
+    }
+
+    public void setSecretOverrides(Map<String, String> secretOverrides) {
+        this.secretOverrides = secretOverrides;
     }
 
     /**

@@ -18,9 +18,16 @@ import java.util.Map;
  * Provides decrypted workflow secrets for variable resolution. Implementations should cache
  * appropriately to avoid repeated decryption on every task evaluation.
  */
-@FunctionalInterface
 public interface SecretProvider {
 
-    /** Returns all secrets as a name→decryptedValue map. */
+    /** Returns all global secrets as a name→decryptedValue map. */
     Map<String, String> getAllSecretsDecrypted();
+
+    /**
+     * Returns merged secrets for a workflow: global secrets overlaid with workflow-scoped secrets.
+     * Workflow-scoped secrets take priority over global secrets on name collision.
+     */
+    default Map<String, String> getSecretsForWorkflow(String workflowName) {
+        return getAllSecretsDecrypted();
+    }
 }

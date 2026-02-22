@@ -35,4 +35,24 @@ public interface SecretDAO {
 
     /** Check if a secret with the given name exists. */
     boolean secretExists(String name);
+
+    // --- Workflow-scoped overloads ---
+
+    /** Create or update a workflow-scoped secret. */
+    void putSecret(String name, String value, String createdBy, String description, String workflowName);
+
+    /** Get the decrypted value of a workflow-scoped secret, or null if not found. */
+    String getSecretValue(String name, String workflowName);
+
+    /** Delete a workflow-scoped secret by name. */
+    void deleteSecret(String name, String workflowName);
+
+    /** List secret names scoped to a specific workflow. */
+    List<String> listSecretNames(String workflowName);
+
+    /** Get all secrets for a specific workflow as a name→decryptedValue map. */
+    Map<String, String> getAllSecrets(String workflowName);
+
+    /** Check if a workflow-scoped secret exists. */
+    boolean secretExists(String name, String workflowName);
 }

@@ -827,7 +827,11 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
         task.setCallbackAfterSeconds(taskResult.getCallbackAfterSeconds());
         task.setOutputData(taskResult.getOutputData());
         if (secretMaskingService != null) {
-            task.setOutputData(secretMaskingService.maskSecrets(task.getOutputData()));
+            task.setOutputData(
+                    secretMaskingService.maskSecrets(
+                            task.getOutputData(),
+                            workflowInstance.getWorkflowName(),
+                            workflowInstance.getSecretOverrides()));
         }
         task.setSubWorkflowId(taskResult.getSubWorkflowId());
 
@@ -1963,6 +1967,9 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
         workflow.setEvent(input.getEvent());
         workflow.setTaskToDomain(input.getTaskToDomain());
         workflow.setVariables(workflowDefinition.getVariables());
+        if (input.getSecretOverrides() != null) {
+            workflow.setSecretOverrides(input.getSecretOverrides());
+        }
 
         if (workflowInput != null && !workflowInput.isEmpty()) {
             Map<String, Object> parsedInput =

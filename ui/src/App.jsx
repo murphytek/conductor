@@ -17,6 +17,8 @@ import TaskDefinitions from "./pages/definitions/Task";
 import TaskDefinition from "./pages/definition/TaskDefinition";
 import EventHandlerDefinitions from "./pages/definitions/EventHandler";
 import EventHandlerDefinition from "./pages/definition/EventHandlerDefinition";
+import SecretDefinitions from "./pages/definitions/Secret";
+import SecretDefinition from "./pages/definition/SecretDefinition";
 import TaskQueue from "./pages/misc/TaskQueue";
 import KitchenSink from "./pages/kitchensink/KitchenSink";
 import DiagramTest from "./pages/kitchensink/DiagramTest";
@@ -127,6 +129,12 @@ export default function App() {
             </Route>
             <Route exact path="/eventHandlerDef/:event?/:name?">
               <EventHandlerDefinition />
+            </Route>
+            <Route exact path="/secretDefs">
+              <SecretDefinitions />
+            </Route>
+            <Route exact path="/secretDef/:name?">
+              <SecretDefinition />
             </Route>
             <Route exact path="/taskQueue/:name?">
               <TaskQueue />

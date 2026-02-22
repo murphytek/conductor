@@ -39,15 +39,32 @@ public class SecretResource {
 
     @PutMapping("/{name}")
     @Operation(summary = "Create or update a secret")
-    public void putSecret(@PathVariable("name") String name, @RequestBody SecretRequest request) {
-        secretService.putSecret(
-                name, request.getValue(), request.getCreatedBy(), request.getDescription());
+    public void putSecret(
+            @PathVariable("name") String name,
+            @RequestBody SecretRequest request,
+            @RequestParam(required = false) String workflowName) {
+        if (workflowName != null) {
+            secretService.putSecret(
+                    name,
+                    request.getValue(),
+                    request.getCreatedBy(),
+                    request.getDescription(),
+                    workflowName);
+        } else {
+            secretService.putSecret(
+                    name, request.getValue(), request.getCreatedBy(), request.getDescription());
+        }
     }
 
     @GetMapping("/{name}")
     @Operation(summary = "Get the value of a secret")
-    public ResponseEntity<Map<String, String>> getSecret(@PathVariable("name") String name) {
-        String value = secretService.getSecretValue(name);
+    public ResponseEntity<Map<String, String>> getSecret(
+            @PathVariable("name") String name,
+            @RequestParam(required = false) String workflowName) {
+        String value =
+                workflowName != null
+                        ? secretService.getSecretValue(name, workflowName)
+                        : secretService.getSecretValue(name);
         if (value == null) {
             return ResponseEntity.notFound().build();
         }
@@ -56,19 +73,33 @@ public class SecretResource {
 
     @GetMapping
     @Operation(summary = "List all secret names")
-    public List<String> listSecretNames() {
-        return secretService.listSecretNames();
+    public List<String> listSecretNames(@RequestParam(required = false) String workflowName) {
+        return workflowName != null
+                ? secretService.listSecretNames(workflowName)
+                : secretService.listSecretNames();
     }
 
     @DeleteMapping("/{name}")
     @Operation(summary = "Delete a secret")
-    public void deleteSecret(@PathVariable("name") String name) {
-        secretService.deleteSecret(name);
+    public void deleteSecret(
+            @PathVariable("name") String name,
+            @RequestParam(required = false) String workflowName) {
+        if (workflowName != null) {
+            secretService.deleteSecret(name, workflowName);
+        } else {
+            secretService.deleteSecret(name);
+        }
     }
 
     @GetMapping("/{name}/exists")
     @Operation(summary = "Check if a secret exists")
-    public Map<String, Boolean> secretExists(@PathVariable("name") String name) {
-        return Map.of("exists", secretService.secretExists(name));
+    public Map<String, Boolean> secretExists(
+            @PathVariable("name") String name,
+            @RequestParam(required = false) String workflowName) {
+        boolean exists =
+                workflowName != null
+                        ? secretService.secretExists(name, workflowName)
+                        : secretService.secretExists(name);
+        return Map.of("exists", exists);
     }
 }

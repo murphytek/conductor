@@ -37,26 +37,50 @@ public class SecretMaskingService {
         this.secretProvider = secretProvider;
     }
 
-    /**
-     * Mask all secret values found in the given output data map.
-     *
-     * @param outputData the task output data (may be null)
-     * @return the masked output data, or the original if no secrets or on error
-     */
+    /** Mask global secrets only (backward-compatible). */
     public Map<String, Object> maskSecrets(Map<String, Object> outputData) {
         if (outputData == null || outputData.isEmpty()) {
             return outputData;
         }
 
         Map<String, String> secrets = secretProvider.getAllSecretsDecrypted();
-        if (secrets == null || secrets.isEmpty()) {
+        return maskWithSecrets(outputData, secrets, null);
+    }
+
+    /** Mask all three secret layers: global + workflow-scoped + runtime overrides. */
+    public Map<String, Object> maskSecrets(
+            Map<String, Object> outputData,
+            String workflowName,
+            Map<String, String> secretOverrides) {
+        if (outputData == null || outputData.isEmpty()) {
             return outputData;
         }
 
-        // Sort by descending length so longer secrets are replaced first,
-        // preventing partial matches when secrets share prefixes/suffixes
+        Map<String, String> allSecrets =
+                new HashMap<>(secretProvider.getSecretsForWorkflow(workflowName));
+        return maskWithSecrets(outputData, allSecrets, secretOverrides);
+    }
+
+    private Map<String, Object> maskWithSecrets(
+            Map<String, Object> outputData,
+            Map<String, String> secrets,
+            Map<String, String> secretOverrides) {
+        // Collect all secret values from both sources
+        Map<String, String> combined = new HashMap<>();
+        if (secrets != null) {
+            combined.putAll(secrets);
+        }
+        if (secretOverrides != null) {
+            combined.putAll(secretOverrides);
+        }
+
+        if (combined.isEmpty()) {
+            return outputData;
+        }
+
+        // Sort by descending length so longer secrets are replaced first
         List<String> secretValues =
-                secrets.values().stream()
+                combined.values().stream()
                         .filter(v -> v != null && !v.isEmpty())
                         .sorted(Comparator.comparingInt(String::length).reversed())
                         .toList();

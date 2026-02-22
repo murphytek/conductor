@@ -26,4 +26,16 @@ public interface SecretService {
     List<String> listSecretNames();
 
     boolean secretExists(String name);
+
+    // --- Workflow-scoped overloads ---
+
+    void putSecret(String name, String value, String createdBy, String description, String workflowName);
+
+    String getSecretValue(String name, String workflowName);
+
+    void deleteSecret(String name, String workflowName);
+
+    List<String> listSecretNames(String workflowName);
+
+    boolean secretExists(String name, String workflowName);
 }

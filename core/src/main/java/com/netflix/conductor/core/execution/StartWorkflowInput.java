@@ -12,6 +12,7 @@
  */
 package com.netflix.conductor.core.execution;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -33,6 +34,7 @@ public class StartWorkflowInput {
     private Map<String, String> taskToDomain;
     private String workflowId;
     private String triggeringWorkflowId;
+    private Map<String, String> secretOverrides = new HashMap<>();
 
     public StartWorkflowInput() {}
 
@@ -46,6 +48,9 @@ public class StartWorkflowInput {
         this.externalInputPayloadStoragePath =
                 startWorkflowRequest.getExternalInputPayloadStoragePath();
         this.taskToDomain = startWorkflowRequest.getTaskToDomain();
+        if (startWorkflowRequest.getSecretOverrides() != null) {
+            this.secretOverrides = startWorkflowRequest.getSecretOverrides();
+        }
     }
 
     public String getName() {
@@ -152,6 +157,14 @@ public class StartWorkflowInput {
         this.triggeringWorkflowId = triggeringWorkflowId;
     }
 
+    public Map<String, String> getSecretOverrides() {
+        return secretOverrides;
+    }
+
+    public void setSecretOverrides(Map<String, String> secretOverrides) {
+        this.secretOverrides = secretOverrides;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -170,7 +183,8 @@ public class StartWorkflowInput {
                 && Objects.equals(event, that.event)
                 && Objects.equals(taskToDomain, that.taskToDomain)
                 && Objects.equals(triggeringWorkflowId, that.triggeringWorkflowId)
-                && Objects.equals(workflowId, that.workflowId);
+                && Objects.equals(workflowId, that.workflowId)
+                && Objects.equals(secretOverrides, that.secretOverrides);
     }
 
     @Override
@@ -188,6 +202,7 @@ public class StartWorkflowInput {
                 event,
                 taskToDomain,
                 triggeringWorkflowId,
-                workflowId);
+                workflowId,
+                secretOverrides);
     }
 }

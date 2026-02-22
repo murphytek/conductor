@@ -111,7 +111,12 @@ public class ParametersUtils {
         workflowParams.put("variables", workflow.getVariables());
 
         if (secretProvider != null) {
-            workflowParams.put("secrets", secretProvider.getAllSecretsDecrypted());
+            Map<String, String> secrets =
+                    new HashMap<>(secretProvider.getSecretsForWorkflow(workflow.getWorkflowName()));
+            if (workflow.getSecretOverrides() != null) {
+                secrets.putAll(workflow.getSecretOverrides());
+            }
+            workflowParams.put("secrets", secrets);
         }
 
         inputMap.put("workflow", workflowParams);
