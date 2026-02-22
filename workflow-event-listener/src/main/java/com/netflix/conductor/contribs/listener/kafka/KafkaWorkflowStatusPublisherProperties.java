@@ -23,6 +23,9 @@ public class KafkaWorkflowStatusPublisherProperties {
 
     private Map<String, Object> producer = new HashMap<>();
 
+    /** Kafka bootstrap servers (avoids dotted-key binding issues with the producer map). */
+    private String bootstrapServers = "kafka:29092";
+
     /** Default Kafka topic where all workflow status events are published. */
     private String defaultTopic = "workflow-status-events";
 
@@ -38,6 +41,14 @@ public class KafkaWorkflowStatusPublisherProperties {
 
     public void setProducer(Map<String, Object> producer) {
         this.producer = producer;
+    }
+
+    public String getBootstrapServers() {
+        return bootstrapServers;
+    }
+
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
     public String getDefaultTopic() {
@@ -79,8 +90,8 @@ public class KafkaWorkflowStatusPublisherProperties {
             }
         }
 
-        // Ensure bootstrapServers is always set
-        setDefaultIfNullOrEmpty(config, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:29092");
+        // Use the dedicated bootstrapServers property (Spring-bindable via hyphenated name)
+        setDefaultIfNullOrEmpty(config, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 
         // Set required default serializers
         setDefaultIfNullOrEmpty(
