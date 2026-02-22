@@ -13,6 +13,7 @@
 package com.netflix.conductor.core.utils;
 
 import java.util.*;
+import java.util.Comparator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +53,13 @@ public class SecretMaskingService {
             return outputData;
         }
 
-        Collection<String> secretValues =
-                secrets.values().stream().filter(v -> v != null && !v.isEmpty()).toList();
+        // Sort by descending length so longer secrets are replaced first,
+        // preventing partial matches when secrets share prefixes/suffixes
+        List<String> secretValues =
+                secrets.values().stream()
+                        .filter(v -> v != null && !v.isEmpty())
+                        .sorted(Comparator.comparingInt(String::length).reversed())
+                        .toList();
 
         if (secretValues.isEmpty()) {
             return outputData;

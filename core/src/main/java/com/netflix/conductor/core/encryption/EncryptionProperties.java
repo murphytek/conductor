@@ -12,6 +12,7 @@
  */
 package com.netflix.conductor.core.encryption;
 
+import java.util.Base64;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -36,6 +37,29 @@ public record EncryptionProperties(
             if (!keys.containsKey(activeKeyId)) {
                 throw new IllegalArgumentException(
                         "active-key-id '%s' must exist in the keys map".formatted(activeKeyId));
+            }
+            for (Map.Entry<String, EncryptionKeyProperties> entry : keys.entrySet()) {
+                String keyId = entry.getKey();
+                EncryptionKeyProperties keyProps = entry.getValue();
+                if (keyProps.secret() == null || keyProps.secret().isBlank()) {
+                    throw new IllegalArgumentException(
+                            "Encryption key '%s' has an empty secret".formatted(keyId));
+                }
+                try {
+                    byte[] decoded = Base64.getDecoder().decode(keyProps.secret());
+                    int bits = decoded.length * 8;
+                    if (bits != 128 && bits != 192 && bits != 256) {
+                        throw new IllegalArgumentException(
+                                "Encryption key '%s' must be 128, 192, or 256 bits but was %d bits"
+                                        .formatted(keyId, bits));
+                    }
+                } catch (IllegalArgumentException e) {
+                    if (e.getMessage().startsWith("Encryption key")) {
+                        throw e;
+                    }
+                    throw new IllegalArgumentException(
+                            "Encryption key '%s' is not valid Base64".formatted(keyId), e);
+                }
             }
         }
     }
