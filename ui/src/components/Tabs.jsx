@@ -5,44 +5,44 @@ import { colors } from "../theme/variables";
 import { theme } from "../theme";
 
 // Override styles for 'Contextual' tabs
-const useContextualTabStyles = makeStyles({
+const useContextualTabStyles = makeStyles((theme) => ({
   root: {
-    color: colors.gray02,
+    color: theme.palette.text.secondary,
     textTransform: "none",
     height: 38,
     minHeight: 38,
     padding: "12px 16px",
-    backgroundColor: colors.gray13,
+    backgroundColor: theme.palette.grey[100],
     [theme.breakpoints.up("md")]: {
       minWidth: 0,
     },
     width: "auto",
     "&:hover": {
-      backgroundColor: colors.grayXLight,
-      color: colors.gray02,
+      backgroundColor: theme.palette.action.hover,
+      color: theme.palette.text.secondary,
     },
   },
   selected: {
-    backgroundColor: "white",
-    color: colors.black,
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
     "&:hover": {
-      backgroundColor: "white",
-      color: colors.black,
+      backgroundColor: theme.palette.background.paper,
+      color: theme.palette.text.primary,
     },
   },
   wrapper: {
     width: "auto",
   },
-});
+}));
 
-const useContextualTabsStyles = makeStyles({
+const useContextualTabsStyles = makeStyles((theme) => ({
   indicator: {
     height: 0,
   },
   flexContainer: {
-    backgroundColor: colors.gray13,
+    backgroundColor: theme.palette.grey[100],
   },
-});
+}));
 
 export default function Tabs({ contextual, children, ...props }) {
   const classes = useContextualTabsStyles();

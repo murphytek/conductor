@@ -15,20 +15,20 @@ import {
 } from "../../utils/helpers";
 import { useWorkflow } from "../../data/workflow";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   banner: {
     margin: 15
   },
   dfSelect: {
     padding: 15,
-    backgroundColor: "#efefef"
+    backgroundColor: theme.palette.background.default,
   },
   tabPanel: {
     padding: 0,
     flex: 1,
     overflowY: "auto"
   }
-});
+}));
 
 export default function RightPanel({
                                      selectedTask,

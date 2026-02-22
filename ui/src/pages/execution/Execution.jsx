@@ -33,7 +33,7 @@ import { useWorkflow } from "../../data/workflow";
 const maxWindowWidth = window.innerWidth;
 const INIT_DRAWER_WIDTH = 650;
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   header: sharedStyles.header,
   drawer: {
     zIndex: 999,
@@ -52,7 +52,7 @@ const useStyles = makeStyles({
     flexShrink: 0,
     boxShadow: "0 4px 8px 0 rgb(0 0 0 / 10%), 0 0 2px 0 rgb(0 0 0 / 10%)",
     zIndex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.palette.background.paper,
   },
   dragger: {
     display: (state) => (state.isFullWidth ? "none" : "block"),
@@ -62,7 +62,7 @@ const useStyles = makeStyles({
     position: "absolute",
     height: "100%",
     zIndex: "100",
-    backgroundColor: "#f4f7f9",
+    backgroundColor: theme.palette.divider,
   },
   drawerMain: {
     paddingLeft: (state) => (state.isFullWidth ? 0 : 4),
@@ -72,7 +72,7 @@ const useStyles = makeStyles({
   },
   drawerContent: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.palette.background.paper,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -112,7 +112,7 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
   },
-});
+}));
 
 export default function Execution() {
   const match = useRouteMatch();

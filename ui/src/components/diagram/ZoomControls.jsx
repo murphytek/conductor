@@ -1,6 +1,7 @@
 import { ZoomControlsButton } from "./ZoomControlButton";
 // import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import PrintOutlinedIcon from "@material-ui/icons/PrintOutlined";
+import { useTheme } from "@material-ui/core/styles";
 import Home from "../../components/icons/Home";
 import Minus from "../../components/icons/Minus";
 import Plus from "../../components/icons/Plus";
@@ -16,8 +17,9 @@ export const ZoomControls = ({
   fitToScreen,
   printScreen,
 }) => {
+  const theme = useTheme();
   const zoomPercent = Math.round(zoom * 100);
-  const borderColor = "#ECECEC";
+  const borderColor = theme.palette.divider;
 
   return (
     <div
@@ -27,7 +29,7 @@ export const ZoomControls = ({
         left: "5px",
         borderRadius: "6px",
         boxShadow: "0px 4px 12px 0px #0000001F",
-        backgroundColor: "#ffffff",
+        backgroundColor: theme.palette.background.paper,
         display: "flex",
         userSelect: "none",
         zIndex: 100,

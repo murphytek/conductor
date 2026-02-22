@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import { Provider as ThemeProvider } from "./theme/provider";
+import { DarkModeProvider } from "./theme/DarkModeContext";
 import { BrowserRouter } from "react-router-dom";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -22,14 +23,16 @@ const queryClient = new QueryClient({
 ReactDOM.render(
   //<React.StrictMode>
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <BrowserRouter basename={getBasename()}>
-        <CssBaseline />
-        <ReactQueryDevtools initialIsOpen={true} />
+    <DarkModeProvider>
+      <ThemeProvider>
+        <BrowserRouter basename={getBasename()}>
+          <CssBaseline />
+          <ReactQueryDevtools initialIsOpen={true} />
 
-        <App />
-      </BrowserRouter>
-    </ThemeProvider>
+          <App />
+        </BrowserRouter>
+      </ThemeProvider>
+    </DarkModeProvider>
   </QueryClientProvider>,
   //</React.StrictMode>
   document.getElementById("root")

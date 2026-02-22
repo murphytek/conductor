@@ -6,7 +6,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #efefef; /*gray13*/
+  /* background-color managed by MUI CssBaseline theme */
   overflow: hidden;
 }
 

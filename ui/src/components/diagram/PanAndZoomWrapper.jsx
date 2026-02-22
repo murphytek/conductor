@@ -1,5 +1,6 @@
 import { useDrag, usePinch, useWheel } from "@use-gesture/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTheme } from "@material-ui/core/styles";
 import domToImage from "dom-to-image";
 import { ZoomControls } from "./ZoomControls";
 
@@ -30,8 +31,9 @@ export const applyZoomToCursor = (
 };
 
 const Viewport = ({ viewportRef, children }) => {
+  const theme = useTheme();
   const backgroundStyle = {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.palette.background.default,
     backgroundImage: `url('/diagramDotBg.svg')`,
   };
 

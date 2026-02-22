@@ -1,5 +1,6 @@
 import Button from "@material-ui/core/Button";
 import { styled } from "@material-ui/core";
+import { colors } from "../theme/variables";
 
 export const fontFamilyList = [
   "-apple-system",
@@ -15,8 +16,8 @@ export const fontFamilyList = [
 ].join(",");
 
 const hoverCss = {
-  backgroundColor: "#857aff",
-  borderColor: "#857aff",
+  backgroundColor: colors.indigo08,
+  borderColor: colors.indigo08,
   boxShadow: "none",
   "&> .MuiButton-label": {
     color: "white",
@@ -30,9 +31,9 @@ const buttonBaseStyle = {
   padding: "6px 12px",
   border: "1px solid",
   lineHeight: 1.3,
-  color: "#ffffff",
-  backgroundColor: "#6558F5",
-  borderColor: "#6558F5",
+  color: colors.white,
+  backgroundColor: colors.violet07,
+  borderColor: colors.violet07,
   fontFamily: fontFamilyList,
   "&:hover": hoverCss,
   "&:active": hoverCss,
@@ -40,7 +41,7 @@ const buttonBaseStyle = {
     boxShadow: "0 0 0 0.2rem rgba(0,123,255,.5)",
   },
   "&> .MuiButton-label": {
-    color: "#ffffff",
+    color: colors.white,
   },
 };
 
@@ -55,17 +56,17 @@ const outlineHoverCss = {
 
 const actionHoverCss = {
   ...hoverCss,
-  backgroundColor: "#30499f",
-  borderColor: "#30499f",
+  backgroundColor: colors.bgBrandDark,
+  borderColor: colors.bgBrandDark,
 };
 
 export const BootstrapOutlineButton = styled(Button)({
   ...buttonBaseStyle,
-  color: "#ffffff",
+  color: colors.white,
   backgroundColor: "ghostwhite",
-  borderColor: "#6558F5",
+  borderColor: colors.violet07,
   "&> .MuiButton-label": {
-    color: "#6558F5",
+    color: colors.violet07,
   },
   "&:hover": outlineHoverCss,
   "&:active": outlineHoverCss,
@@ -73,11 +74,11 @@ export const BootstrapOutlineButton = styled(Button)({
 
 export const BootstrapOutlineActionButton = styled(Button)({
   ...buttonBaseStyle,
-  color: "#ffffff",
+  color: colors.white,
   backgroundColor: "ghostwhite",
-  borderColor: "#30499f",
+  borderColor: colors.bgBrandDark,
   "&> .MuiButton-label": {
-    color: "#30499f",
+    color: colors.bgBrandDark,
   },
   "&:hover": actionHoverCss,
   "&:active": actionHoverCss,
@@ -85,11 +86,11 @@ export const BootstrapOutlineActionButton = styled(Button)({
 
 export const BootstrapTextButton = styled(Button)({
   ...buttonBaseStyle,
-  color: "#ffffff",
+  color: colors.white,
   backgroundColor: "ghostwhite",
   borderColor: "transparent",
   "&> .MuiButton-label": {
-    color: "#6558F5",
+    color: colors.violet07,
   },
   "&:hover": outlineHoverCss,
   "&:active": outlineHoverCss,
@@ -99,10 +100,10 @@ export const BootstrapActionButton = styled(Button)({
   ...buttonBaseStyle,
   fontSize: 14,
   lineHeight: 1.5,
-  backgroundColor: "#4969e4",
-  borderColor: "#4969e4",
+  backgroundColor: colors.brand,
+  borderColor: colors.brand,
   "&> .MuiButton-label": {
-    color: "#ffffff",
+    color: colors.white,
   },
   "&:hover": actionHoverCss,
   "&:active": actionHoverCss,

@@ -3,9 +3,12 @@ import React from "react";
 import { Route, Switch } from "react-router-dom";
 import { makeStyles } from "@material-ui/styles";
 import { loader } from '@monaco-editor/react';
-import { Button, AppBar, Toolbar } from "@material-ui/core";
+import { Button, AppBar, Toolbar, IconButton, Tooltip } from "@material-ui/core";
+import Brightness4Icon from "@material-ui/icons/Brightness4";
+import Brightness7Icon from "@material-ui/icons/Brightness7";
 import AppLogo from "./plugins/AppLogo";
 import NavLink from "./components/NavLink";
+import { useDarkMode } from "./theme/DarkModeContext";
 
 import WorkflowSearch from "./pages/executions/WorkflowSearch";
 import TaskSearch from "./pages/executions/TaskSearch";
@@ -42,7 +45,7 @@ const ErrorsInspector = ERRORS_INSPECTOR_ENABLED
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    backgroundColor: "#efefef", // TODO: Use theme var
+    backgroundColor: theme.palette.background.default,
     display: "flex",
   },
   body: {
@@ -62,6 +65,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function App() {
   const classes = useStyles();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   return (
     // Provide context for backward compatibility with class components
@@ -94,6 +98,11 @@ export default function App() {
 
           <div className={classes.toolbarRight}>
             <AppBarModules />
+            <Tooltip title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+              <IconButton onClick={toggleDarkMode} color="inherit">
+                {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
           </div>
         </Toolbar>
       </AppBar>
