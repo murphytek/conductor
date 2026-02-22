@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.netflix.conductor.common.metadata.tasks.TaskDef;
@@ -52,10 +53,13 @@ public class ParametersUtils {
                     Pattern.DOTALL);
 
     private final ObjectMapper objectMapper;
+    private final SecretProvider secretProvider;
     private final TypeReference<Map<String, Object>> map = new TypeReference<>() {};
 
-    public ParametersUtils(ObjectMapper objectMapper) {
+    public ParametersUtils(
+            ObjectMapper objectMapper, @Autowired(required = false) SecretProvider secretProvider) {
         this.objectMapper = objectMapper;
+        this.secretProvider = secretProvider;
     }
 
     public Map<String, Object> getTaskInput(
@@ -100,6 +104,10 @@ public class ParametersUtils {
         workflowParams.put("reasonForIncompletion", workflow.getReasonForIncompletion());
         workflowParams.put("schemaVersion", workflow.getWorkflowDefinition().getSchemaVersion());
         workflowParams.put("variables", workflow.getVariables());
+
+        if (secretProvider != null) {
+            workflowParams.put("secrets", secretProvider.getAllSecretsDecrypted());
+        }
 
         inputMap.put("workflow", workflowParams);
 

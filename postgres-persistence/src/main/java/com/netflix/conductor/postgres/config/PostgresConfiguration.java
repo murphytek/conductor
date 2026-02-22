@@ -31,6 +31,7 @@ import org.springframework.retry.backoff.NoBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
+import com.netflix.conductor.core.encryption.FieldEncryptionService;
 import com.netflix.conductor.postgres.dao.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -133,6 +134,19 @@ public class PostgresConfiguration {
             @Qualifier("postgresRetryTemplate") RetryTemplate retryTemplate,
             ObjectMapper objectMapper) {
         return new PostgresLockDAO(retryTemplate, objectMapper, dataSource);
+    }
+
+    @Bean
+    @DependsOn({"flywayForPrimaryDb"})
+    @ConditionalOnProperty(
+            name = "platform.resources.database.encryption.enabled",
+            havingValue = "true")
+    public PostgresSecretDAO postgresSecretDAO(
+            @Qualifier("postgresRetryTemplate") RetryTemplate retryTemplate,
+            ObjectMapper objectMapper,
+            FieldEncryptionService fieldEncryptionService) {
+        return new PostgresSecretDAO(
+                retryTemplate, objectMapper, dataSource, fieldEncryptionService);
     }
 
     @Bean

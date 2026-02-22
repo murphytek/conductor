@@ -12,6 +12,8 @@
  */
 package com.netflix.conductor.contribs.listener.kafka;
 
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +47,8 @@ public class KafkaTaskStatusPublisherConfiguration {
             @Value("${conductor.task-status-listener.kafka.topic:conductor.task.status.v1}")
                     String topic) {
         LOGGER.info("Configuring KafkaTaskStatusPublisher for topic '{}'", topic);
-        KafkaObservableQueue queue = new KafkaObservableQueue.Builder(kafkaProperties).build(topic);
+        KafkaObservableQueue queue =
+                new KafkaObservableQueue.Builder(kafkaProperties).build(topic, new Properties());
         return new KafkaTaskStatusPublisher(queue, objectMapper);
     }
 }

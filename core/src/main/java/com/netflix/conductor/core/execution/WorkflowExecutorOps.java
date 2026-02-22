@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.netflix.conductor.annotations.Trace;
@@ -46,6 +47,7 @@ import com.netflix.conductor.core.metadata.MetadataMapperService;
 import com.netflix.conductor.core.utils.IDGenerator;
 import com.netflix.conductor.core.utils.ParametersUtils;
 import com.netflix.conductor.core.utils.QueueUtils;
+import com.netflix.conductor.core.utils.SecretMaskingService;
 import com.netflix.conductor.core.utils.Utils;
 import com.netflix.conductor.dao.MetadataDAO;
 import com.netflix.conductor.dao.QueueDAO;
@@ -84,6 +86,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
     private final WorkflowStatusListener workflowStatusListener;
     private final TaskStatusListener taskStatusListener;
     private final SystemTaskRegistry systemTaskRegistry;
+    private final SecretMaskingService secretMaskingService;
     private long activeWorkerLastPollMs;
     private final ExecutionLockService executionLockService;
 
@@ -104,7 +107,8 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             ExecutionLockService executionLockService,
             SystemTaskRegistry systemTaskRegistry,
             ParametersUtils parametersUtils,
-            IDGenerator idGenerator) {
+            IDGenerator idGenerator,
+            @Autowired(required = false) SecretMaskingService secretMaskingService) {
         this.deciderService = deciderService;
         this.metadataDAO = metadataDAO;
         this.queueDAO = queueDAO;
@@ -118,6 +122,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
         this.parametersUtils = parametersUtils;
         this.idGenerator = idGenerator;
         this.systemTaskRegistry = systemTaskRegistry;
+        this.secretMaskingService = secretMaskingService;
     }
 
     /**
@@ -821,6 +826,9 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
         task.setWorkerId(taskResult.getWorkerId());
         task.setCallbackAfterSeconds(taskResult.getCallbackAfterSeconds());
         task.setOutputData(taskResult.getOutputData());
+        if (secretMaskingService != null) {
+            task.setOutputData(secretMaskingService.maskSecrets(task.getOutputData()));
+        }
         task.setSubWorkflowId(taskResult.getSubWorkflowId());
 
         if (StringUtils.isNotBlank(taskResult.getExternalOutputPayloadStoragePath())) {
