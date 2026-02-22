@@ -13,10 +13,10 @@ import BulkActionModule from "./BulkActionModule";
 import executionsStyles from "./executionsStyles";
 import sharedStyles from "../styles";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   ...executionsStyles,
-  ...sharedStyles,
-});
+  ...sharedStyles(theme),
+}));
 
 const executionFields = [
   { name: "startTime", type: "date" },

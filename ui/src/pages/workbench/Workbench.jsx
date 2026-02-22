@@ -3,11 +3,10 @@ import { makeStyles } from "@material-ui/styles";
 import { Helmet } from "react-helmet";
 import RunHistory from "./RunHistory";
 import WorkbenchForm from "./WorkbenchForm";
-import { colors } from "../../theme/variables";
 import { useStartWorkflow } from "../../data/workflow";
 import ExecutionHistory from "./ExecutionHistory";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   wrapper: {
     height: "100%",
     overflow: "hidden",
@@ -22,7 +21,7 @@ const useStyles = makeStyles({
     float: "right",
   },
   toolbar: {
-    backgroundColor: colors.gray14,
+    backgroundColor: theme.palette.background.default,
   },
   workflowName: {
     fontWeight: "bold",
@@ -46,7 +45,7 @@ const useStyles = makeStyles({
   runInfo: {
     marginLeft: -350,
   },
-});
+}));
 
 export default function Workbench() {
   const classes = useStyles();

@@ -9,8 +9,8 @@ import AddIcon from "@material-ui/icons/Add";
 import { useSecrets } from "../../data/secret";
 import { useWorkflowNames } from "../../data/workflow";
 
-const useStyles = makeStyles({
-  ...sharedStyles,
+const useStyles = makeStyles((theme) => ({
+  ...sharedStyles(theme),
   filterRow: {
     display: "flex",
     alignItems: "center",
@@ -20,7 +20,7 @@ const useStyles = makeStyles({
   workflowFilter: {
     minWidth: 250,
   },
-});
+}));
 
 const columns = [
   {

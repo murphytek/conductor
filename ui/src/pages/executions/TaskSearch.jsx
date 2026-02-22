@@ -24,10 +24,10 @@ import clsx from "clsx";
 import executionsStyles from "./executionsStyles";
 import sharedStyles from "../styles";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   ...executionsStyles,
-  ...sharedStyles,
-});
+  ...sharedStyles(theme),
+}));
 
 const DEFAULT_SORT = "startTime:DESC";
 const MS_IN_DAY = 86400000;

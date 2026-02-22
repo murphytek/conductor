@@ -34,7 +34,7 @@ const maxWindowWidth = window.innerWidth;
 const INIT_DRAWER_WIDTH = 650;
 
 const useStyles = makeStyles((theme) => ({
-  header: sharedStyles.header,
+  header: sharedStyles(theme).header,
   drawer: {
     zIndex: 999,
     position: "absolute",

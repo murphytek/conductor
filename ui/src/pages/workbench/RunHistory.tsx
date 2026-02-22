@@ -9,27 +9,26 @@ import {
   Toolbar,
   IconButton,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/styles";
+import { makeStyles } from "@material-ui/core/styles";
 import { immutableReplaceAt } from "../../utils/helpers";
 import { formatRelative } from "date-fns";
 import DeleteIcon from "@material-ui/icons/DeleteForever";
-import { colors } from "../../theme/variables";
 import CloseIcon from "@material-ui/icons/Close";
 import _ from "lodash";
 import { useEnv } from "../../plugins/env";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   sidebar: {
     width: 300,
     border: "0px solid rgba(0, 0, 0, 0)",
     zIndex: 1,
     boxShadow: "0 2px 4px 0 rgb(0 0 0 / 10%), 0 0 2px 0 rgb(0 0 0 / 10%)",
-    background: "#fff",
+    background: theme.palette.background.paper,
     display: "flex",
     flexDirection: "column",
   },
   toolbar: {
-    backgroundColor: colors.gray14,
+    backgroundColor: theme.palette.background.default,
   },
   title: {
     fontWeight: "bold",
@@ -40,7 +39,7 @@ const useStyles = makeStyles({
     cursor: "pointer",
     flex: 1,
   },
-});
+}));
 type RunPayload = any;
 type RunEntry = {
   runPayload: RunPayload;

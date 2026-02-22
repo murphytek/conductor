@@ -10,12 +10,11 @@ import FormikVersionDropdown from "../../components/formik/FormikVersionDropdown
 import PlayArrowIcon from "@material-ui/icons/PlayArrow";
 import PlaylistAddIcon from "@material-ui/icons/PlaylistAdd";
 import SaveIcon from "@material-ui/icons/Save";
-import { colors } from "../../theme/variables";
 import { timestampRenderer } from "../../utils/helpers";
 import * as Yup from "yup";
 import FormikWorkflowNameInput from "../../components/formik/FormikWorkflowNameInput";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   name: {
     width: "50%",
   },
@@ -23,7 +22,7 @@ const useStyles = makeStyles({
     float: "right",
   },
   toolbar: {
-    backgroundColor: colors.gray14,
+    backgroundColor: theme.palette.background.default,
   },
   workflowName: {
     fontWeight: "bold",
@@ -44,7 +43,7 @@ const useStyles = makeStyles({
     overflowY: "auto",
     gap: 15,
   },
-});
+}));
 
 Yup.addMethod(Yup.string, "isJson", function () {
   return this.test("is-json", "is not valid json", (value) => {

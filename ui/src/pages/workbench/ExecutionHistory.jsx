@@ -7,30 +7,29 @@ import {
 } from "@material-ui/core";
 import { StatusBadge, Text, NavLink } from "../../components";
 import { makeStyles } from "@material-ui/styles";
-import { colors } from "../../theme/variables";
 import _ from "lodash";
 import { useInvalidateWorkflows, useWorkflowsByIds } from "../../data/workflow";
 import { formatRelative } from "date-fns";
 import RefreshIcon from "@material-ui/icons/Refresh";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   sidebar: {
     width: 360,
     border: "0px solid rgba(0, 0, 0, 0)",
     zIndex: 1,
     boxShadow: "0 2px 4px 0 rgb(0 0 0 / 10%), 0 0 2px 0 rgb(0 0 0 / 10%)",
-    background: "#fff",
+    background: theme.palette.background.paper,
     display: "flex",
     flexDirection: "column",
   },
   toolbar: {
-    backgroundColor: colors.gray14,
+    backgroundColor: theme.palette.background.default,
   },
   list: {
     overflowY: "auto",
     flex: 1,
   },
-});
+}));
 
 export default function ExecutionHistory({ run }) {
   const classes = useStyles();

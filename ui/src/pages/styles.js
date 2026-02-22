@@ -1,6 +1,4 @@
-import { colors } from "../theme/variables";
-
-export default {
+export default (theme) => ({
   wrapper: {
     overflowY: "scroll",
     overflowX: "hidden",
@@ -10,7 +8,7 @@ export default {
     padding: 30,
   },
   header: {
-    backgroundColor: colors.gray14,
+    backgroundColor: theme.palette.background.default,
     padding: "20px 30px 0 30px",
     zIndex: 1,
   },
@@ -28,4 +26,4 @@ export default {
   field: {
     marginBottom: 15,
   },
-};
+});

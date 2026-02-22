@@ -15,10 +15,10 @@ import sharedStyles from "../styles";
 import TaskLink from "../../components/TaskLink";
 import { SEARCH_TASK_TYPES_SET } from "../../utils/constants";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   ...executionsStyles,
-  ...sharedStyles,
-});
+  ...sharedStyles(theme),
+}));
 
 const executionFields = [
   { name: "updateTime", label: "Update Time", type: "date" },

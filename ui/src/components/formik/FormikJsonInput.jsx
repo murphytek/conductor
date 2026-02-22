@@ -2,24 +2,25 @@ import { useRef, useEffect } from "react";
 import { useField } from "formik";
 import Editor from "@monaco-editor/react";
 import { makeStyles } from "@material-ui/styles";
+import { useTheme } from "@material-ui/core/styles";
 import { FormHelperText, InputLabel } from "@material-ui/core";
 import clsx from "clsx";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   wrapper: {
     width: "100%",
   },
   monaco: {
     padding: 10,
     width: "100%",
-    borderColor: "rgba(128, 128, 128, 0.2)",
+    borderColor: theme.palette.divider,
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 4,
-    backgroundColor: "rgb(255, 255, 255)",
+    backgroundColor: theme.palette.background.paper,
     "&:focus-within": {
       margin: -2,
-      borderColor: "rgb(73, 105, 228)",
+      borderColor: theme.palette.primary.main,
       borderStyle: "solid",
       borderWidth: 2,
     },
@@ -28,7 +29,7 @@ const useStyles = makeStyles({
     display: "block",
     marginBottom: 8,
   },
-});
+}));
 
 export default function ({
   className,
@@ -38,6 +39,7 @@ export default function ({
   ...props
 }) {
   const classes = useStyles();
+  const theme = useTheme();
   const [field, meta, helper] = useField(props);
   const editorRef = useRef(null);
 
@@ -63,6 +65,7 @@ export default function ({
       <Editor
         className={classes.monaco}
         height={height || 90}
+        theme={theme.palette.type === "dark" ? "vs-dark" : "light"}
         defaultLanguage="json"
         onMount={handleEditorMount}
         defaultValue={field.value}

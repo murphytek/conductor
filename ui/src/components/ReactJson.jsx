@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { makeStyles } from "@material-ui/styles";
+import { useTheme } from "@material-ui/core/styles";
 import { InputLabel, IconButton, Tooltip } from "@material-ui/core";
 import clsx from "clsx";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
@@ -42,6 +43,7 @@ export default function ReactJson({
   lineNumbers = true,
 }) {
   const classes = useStyles();
+  const theme = useTheme();
   const editorRef = useRef(null);
 
   function handleEditorMount(editor) {
@@ -92,6 +94,7 @@ export default function ReactJson({
         <Editor
           className={classes.monaco}
           height="100%"
+          theme={theme.palette.type === "dark" ? "vs-dark" : "light"}
           defaultLanguage="json"
           onMount={handleEditorMount}
           defaultValue={JSON.stringify(src, null, 2)}

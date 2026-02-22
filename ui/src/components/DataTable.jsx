@@ -9,6 +9,7 @@ import {
   Tooltip,
   Popover,
 } from "@material-ui/core";
+import { useTheme } from "@material-ui/core/styles";
 import ViewColumnIcon from "@material-ui/icons/ViewColumn";
 import SearchIcon from "@material-ui/icons/Search";
 import { Heading, Select, Input } from "./";
@@ -32,8 +33,42 @@ export default function DataTable(props) {
     title,
     onFilterChange,
     initialFilterObj,
+    customStyles: externalCustomStyles,
     ...rest
   } = props;
+
+  const theme = useTheme();
+  const isDark = theme.palette.type === "dark";
+  const themeCustomStyles = isDark
+    ? {
+        table: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } },
+        headRow: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderBottomColor: theme.palette.divider } },
+        rows: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, "&:not(:last-of-type)": { borderBottomColor: theme.palette.divider } }, highlightOnHoverStyle: { backgroundColor: theme.palette.action.hover, color: theme.palette.text.primary } },
+        pagination: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderTopColor: theme.palette.divider } },
+        noData: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } },
+        header: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } },
+        subHeader: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } },
+        contextMenu: { style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } },
+      }
+    : {};
+
+  // Deep merge external custom styles on top of theme styles
+  const mergedCustomStyles = externalCustomStyles
+    ? Object.keys({ ...themeCustomStyles, ...externalCustomStyles }).reduce(
+        (acc, key) => {
+          acc[key] = {
+            ...themeCustomStyles[key],
+            ...externalCustomStyles[key],
+            style: {
+              ...(themeCustomStyles[key] || {}).style,
+              ...(externalCustomStyles[key] || {}).style,
+            },
+          };
+          return acc;
+        },
+        {}
+      )
+    : themeCustomStyles;
 
   const DEFAULT_FILTER_OBJ = {
     columnName: columns.find((col) => col.searchable !== false).name,
@@ -165,6 +200,7 @@ export default function DataTable(props) {
       paginationServer={paginationServer}
       paginationPerPage={paginationPerPage}
       paginationRowsPerPageOptions={[15, 30, 100, 1000]}
+      customStyles={mergedCustomStyles}
       actions={
         <>
           {!paginationServer && showFilter && (

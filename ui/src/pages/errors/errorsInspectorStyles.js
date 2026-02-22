@@ -53,10 +53,10 @@ export const styles = {
     cursor: "pointer",
   },
   toolbar: {
-    backgroundColor: colors.gray14,
     padding: "10px",
     borderRadius: "4px",
     marginBottom: "15px",
+    opacity: 0.85,
   },
   workflowName: {
     fontWeight: "bold",
@@ -87,7 +87,6 @@ export const styles = {
     marginLeft: "-350px",
   },
   card: {
-    backgroundColor: "white",
     padding: "20px",
     borderRadius: "6px",
     boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
@@ -117,21 +116,24 @@ export const styles = {
     borderCollapse: "collapse",
   },
   tableHeader: {
-    backgroundColor: colors.gray14,
     padding: "10px",
     textAlign: "left",
-    borderBottom: "1px solid #ddd",
+    borderBottom: "1px solid currentColor",
+    opacity: 0.7,
   },
   tableCell: {
     padding: "10px",
-    borderBottom: "1px solid #ddd",
+    borderBottom: "1px solid currentColor",
+    opacity: 0.85,
   },
   textArea: {
     width: "100%",
     height: "120px",
     padding: "10px",
     borderRadius: "4px",
-    border: "1px solid #ddd",
+    border: "1px solid currentColor",
+    backgroundColor: "inherit",
+    color: "inherit",
   },
   statusTag: {
     padding: "4px 8px",
@@ -158,8 +160,10 @@ export const styles = {
   select: {
     padding: "8px",
     borderRadius: "4px",
-    border: "1px solid #ddd",
+    border: "1px solid currentColor",
     width: "100%",
+    backgroundColor: "inherit",
+    color: "inherit",
   },
   filterContainer: {
     display: "flex",
@@ -189,14 +193,14 @@ export const styles = {
     paddingLeft: "30px",
     paddingRight: "20px",
     borderRadius: "4px",
-    border: "1px solid #ddd",
-    backgroundColor: "#f0f7ff",
+    border: "1px solid currentColor",
     color: colors.blue,
     fontWeight: "normal",
     appearance: "none",
     WebkitAppearance: "none",
     MozAppearance: "none",
-    cursor: "pointer"
+    cursor: "pointer",
+    backgroundColor: "inherit",
   },
   timeRangeIconContainer: {
     position: "absolute", 
@@ -218,8 +222,8 @@ export const styles = {
   },
   liveTailButton: (autoRefreshEnabled, isLoading) => ({
     backgroundColor: autoRefreshEnabled ? colors.blue : "transparent",
-    color: autoRefreshEnabled ? "white" : "#666",
-    border: "1px solid " + (autoRefreshEnabled ? colors.blue : "#ddd"),
+    color: autoRefreshEnabled ? "white" : "inherit",
+    border: "1px solid " + (autoRefreshEnabled ? colors.blue : "currentColor"),
     borderRadius: "4px",
     padding: "6px 12px",
     cursor: isLoading ? "not-allowed" : "pointer",
@@ -234,7 +238,6 @@ export const styles = {
     width: `${(timeUntilRefresh / 60) * 100}%`
   }),
   summaryCard: (filteredData) => ({
-    backgroundColor: filteredData && filteredData.length === 0 ? "#fff8e1" : "white",
     borderLeft: filteredData && filteredData.length === 0 ? "4px solid #ffc107" : "none",
     animation: filteredData && filteredData.length === 0 ? "flash 1s ease-in-out" : "none",
     padding: "16px",
@@ -242,13 +245,13 @@ export const styles = {
     boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
   }),
   summaryCardValue: (isEmpty) => ({
-    fontSize: "24px", 
+    fontSize: "24px",
     fontWeight: "bold",
     color: isEmpty ? "#f57c00" : "inherit"
   }),
   noDataMessage: {
-    fontSize: "14px", 
-    color: "#f57c00", 
+    fontSize: "14px",
+    color: "#f57c00",
     fontWeight: "500",
     marginTop: "8px"
   },
@@ -265,33 +268,30 @@ export const styles = {
     gap: "5px"
   },
   filterIndicator: {
-    marginBottom: "10px", 
-    padding: "6px 10px", 
-    backgroundColor: "#f0f7ff", 
-    borderRadius: "4px",
-    fontSize: "14px"
-  },
-  errorIndicator: {
-    marginBottom: "10px", 
-    padding: "6px 10px", 
-    backgroundColor: "#ffebee", 
+    marginBottom: "10px",
+    padding: "6px 10px",
     borderRadius: "4px",
     fontSize: "14px",
-    color: colors.red
+  },
+  errorIndicator: {
+    marginBottom: "10px",
+    padding: "6px 10px",
+    borderRadius: "4px",
+    fontSize: "14px",
+    color: colors.red,
   },
   noResultsContainer: {
-    padding: '40px', 
-    textAlign: 'center', 
-    color: '#666',
-    backgroundColor: '#f9f9f9',
+    padding: '40px',
+    textAlign: 'center',
+    opacity: 0.7,
     borderRadius: '4px'
   },
   tooltipContainer: {
-    backgroundColor: '#fff', 
-    padding: '10px', 
-    border: '1px solid #ccc',
+    padding: '10px',
+    border: '1px solid currentColor',
     borderRadius: '4px',
-    maxWidth: '300px'
+    maxWidth: '300px',
+    opacity: 0.95,
   },
   tooltipTitle: {
     margin: 0, 
@@ -299,20 +299,21 @@ export const styles = {
     marginBottom: '5px'
   },
   tooltipScrollContainer: {
-    maxHeight: '100px', 
-    overflowY: 'auto', 
+    maxHeight: '100px',
+    overflowY: 'auto',
     padding: '3px',
-    border: '1px solid #eee',
-    borderRadius: '3px'
+    border: '1px solid currentColor',
+    borderRadius: '3px',
+    opacity: 0.7,
   },
   tooltipItem: {
     margin: '2px 0', 
     wordBreak: 'break-word'
   },
   tooltipHint: {
-    margin: 0, 
-    fontSize: '11px', 
-    color: '#666', 
+    margin: 0,
+    fontSize: '11px',
+    opacity: 0.6,
     marginTop: '5px'
   }
 };
