@@ -35,6 +35,7 @@ import com.netflix.conductor.common.metadata.tasks.PollData;
 import com.netflix.conductor.common.metadata.tasks.TaskDef;
 import com.netflix.conductor.common.metadata.tasks.TaskResult;
 import com.netflix.conductor.common.metadata.tasks.TaskType;
+import com.netflix.conductor.common.metadata.workflow.RateLimitConfig;
 import com.netflix.conductor.common.metadata.workflow.RerunWorkflowRequest;
 import com.netflix.conductor.common.metadata.workflow.WorkflowDef;
 import com.netflix.conductor.common.metadata.workflow.WorkflowTask;
@@ -435,6 +436,82 @@ public class TestWorkflowExecutor {
                 .onWorkflowCompletedIfEnabled(any(WorkflowModel.class));
         verify(workflowStatusListener, times(0))
                 .onWorkflowFinalizedIfEnabled(any(WorkflowModel.class));
+    }
+
+    @Test
+    public void testStartWorkflowQueuesWhenWorkflowRateLimited() {
+        WorkflowDef workflowDef = new WorkflowDef();
+        workflowDef.setName("limitedWorkflow");
+        workflowDef.setVersion(1);
+        RateLimitConfig rateLimitConfig = new RateLimitConfig();
+        rateLimitConfig.setRateLimitKey("${workflow.input.tenant}");
+        rateLimitConfig.setConcurrentExecLimit(1);
+        workflowDef.setRateLimitConfig(rateLimitConfig);
+
+        StartWorkflowInput input = new StartWorkflowInput();
+        input.setWorkflowDefinition(workflowDef);
+        input.setWorkflowId("rate-limited-workflow");
+        input.setWorkflowInput(Map.of("tenant", "tenantA"));
+
+        when(executionLockService.acquireLock(anyString())).thenReturn(true);
+        doAnswer(
+                        invocation -> {
+                            WorkflowModel workflow = invocation.getArgument(0);
+                            assertEquals("tenantA", workflow.getRateLimitKey());
+                            workflow.setRateLimited(true);
+                            return workflow.getWorkflowId();
+                        })
+                .when(executionDAOFacade)
+                .createWorkflow(any(WorkflowModel.class));
+
+        String workflowId = workflowExecutor.startWorkflow(input);
+
+        assertEquals("rate-limited-workflow", workflowId);
+        verify(executionDAOFacade, never()).updateWorkflow(any(WorkflowModel.class));
+        verify(workflowStatusListener, times(1))
+                .onWorkflowStartedIfEnabled(any(WorkflowModel.class));
+    }
+
+    @Test
+    public void testCompleteWorkflowReleasesQueuedRateLimitedWorkflow() {
+        WorkflowDef workflowDef = new WorkflowDef();
+        workflowDef.setName("limitedWorkflow");
+        workflowDef.setVersion(1);
+        RateLimitConfig rateLimitConfig = new RateLimitConfig();
+        rateLimitConfig.setRateLimitKey("tenantA");
+        rateLimitConfig.setConcurrentExecLimit(1);
+        workflowDef.setRateLimitConfig(rateLimitConfig);
+
+        WorkflowModel workflow = new WorkflowModel();
+        workflow.setWorkflowDefinition(workflowDef);
+        workflow.setWorkflowId("active-workflow");
+        workflow.setStatus(WorkflowModel.Status.RUNNING);
+        workflow.setOwnerApp("junit_test");
+        workflow.setCreateTime(10L);
+        workflow.setRateLimitKey("tenantA");
+        workflow.setOutput(Collections.emptyMap());
+
+        WorkflowModel releasedWorkflow = new WorkflowModel();
+        releasedWorkflow.setWorkflowDefinition(workflowDef);
+        releasedWorkflow.setWorkflowId("released-workflow");
+        releasedWorkflow.setStatus(WorkflowModel.Status.RUNNING);
+        releasedWorkflow.setOwnerApp("junit_test");
+        releasedWorkflow.setCreateTime(20L);
+        releasedWorkflow.setRateLimitKey("tenantA");
+        releasedWorkflow.setRateLimited(false);
+        releasedWorkflow.setOutput(Collections.emptyMap());
+
+        when(executionLockService.acquireLock(anyString())).thenReturn(true);
+        when(executionDAOFacade.releaseRateLimitedWorkflows("limitedWorkflow", "tenantA", 1))
+                .thenReturn(List.of(releasedWorkflow), List.of());
+        when(executionDAOFacade.getWorkflowModel("released-workflow", true))
+                .thenReturn(releasedWorkflow);
+
+        workflowExecutor.completeWorkflow(workflow);
+
+        verify(executionDAOFacade, times(2))
+                .releaseRateLimitedWorkflows("limitedWorkflow", "tenantA", 1);
+        verify(executionDAOFacade, times(1)).getWorkflowModel("released-workflow", true);
     }
 
     @Test

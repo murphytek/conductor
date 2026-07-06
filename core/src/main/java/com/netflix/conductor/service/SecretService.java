@@ -29,7 +29,8 @@ public interface SecretService {
 
     // --- Workflow-scoped overloads ---
 
-    void putSecret(String name, String value, String createdBy, String description, String workflowName);
+    void putSecret(
+            String name, String value, String createdBy, String description, String workflowName);
 
     String getSecretValue(String name, String workflowName);
 

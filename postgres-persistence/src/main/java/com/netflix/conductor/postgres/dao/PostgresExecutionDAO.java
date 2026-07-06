@@ -27,6 +27,7 @@ import org.springframework.retry.support.RetryTemplate;
 
 import com.netflix.conductor.common.metadata.events.EventExecution;
 import com.netflix.conductor.common.metadata.tasks.TaskDef;
+import com.netflix.conductor.common.metadata.workflow.RateLimitConfig;
 import com.netflix.conductor.core.exception.NonTransientException;
 import com.netflix.conductor.dao.ConcurrentExecutionLimitDAO;
 import com.netflix.conductor.dao.ExecutionDAO;
@@ -416,6 +417,41 @@ public class PostgresExecutionDAO extends PostgresBaseDAO
     }
 
     @Override
+    public List<WorkflowModel> releaseRateLimitedWorkflows(
+            String workflowName, String rateLimitKey, int concurrentExecLimit) {
+        if (workflowName == null
+                || workflowName.isBlank()
+                || rateLimitKey == null
+                || rateLimitKey.isBlank()
+                || concurrentExecLimit <= 0) {
+            return List.of();
+        }
+
+        return getWithRetriedTransactions(
+                tx -> {
+                    acquireWorkflowRateLimitLock(tx, workflowName, rateLimitKey);
+
+                    long activeCount =
+                            getActiveWorkflowRateLimitCount(tx, workflowName, rateLimitKey);
+                    int available = (int) Math.max(0, concurrentExecLimit - activeCount);
+                    if (available == 0) {
+                        return List.of();
+                    }
+
+                    List<WorkflowModel> workflows =
+                            getQueuedRateLimitedWorkflows(
+                                    tx, workflowName, rateLimitKey, available);
+                    workflows.forEach(
+                            workflow -> {
+                                workflow.setRateLimited(false);
+                                workflow.setUpdatedTime(System.currentTimeMillis());
+                                updateWorkflow(tx, workflow);
+                            });
+                    return workflows;
+                });
+    }
+
+    @Override
     public long getInProgressTaskCount(String taskDefName) {
         String GET_IN_PROGRESS_TASK_COUNT =
                 "SELECT COUNT(*) FROM task_in_progress WHERE task_def_name = ? AND in_progress_status = true";
@@ -585,6 +621,7 @@ public class PostgresExecutionDAO extends PostgresBaseDAO
         withTransaction(
                 tx -> {
                     if (!update) {
+                        applyWorkflowRateLimit(tx, workflow);
                         addWorkflow(tx, workflow);
                         addWorkflowDefToWorkflowMapping(tx, workflow);
                     } else {
@@ -602,6 +639,75 @@ public class PostgresExecutionDAO extends PostgresBaseDAO
 
         workflow.setTasks(tasks);
         return workflow.getWorkflowId();
+    }
+
+    private void applyWorkflowRateLimit(Connection connection, WorkflowModel workflow) {
+        RateLimitConfig rateLimitConfig = workflow.getWorkflowDefinition().getRateLimitConfig();
+        String rateLimitKey = workflow.getRateLimitKey();
+        if (rateLimitConfig == null
+                || rateLimitConfig.getConcurrentExecLimit() <= 0
+                || rateLimitKey == null
+                || rateLimitKey.isBlank()) {
+            workflow.setRateLimited(false);
+            return;
+        }
+
+        acquireWorkflowRateLimitLock(connection, workflow.getWorkflowName(), rateLimitKey);
+        long activeCount =
+                getActiveWorkflowRateLimitCount(
+                        connection, workflow.getWorkflowName(), rateLimitKey);
+        workflow.setRateLimited(activeCount >= rateLimitConfig.getConcurrentExecLimit());
+    }
+
+    private void acquireWorkflowRateLimitLock(
+            Connection connection, String workflowName, String rateLimitKey) {
+        String LOCK_WORKFLOW_RATE_LIMIT = "SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))";
+        query(
+                connection,
+                LOCK_WORKFLOW_RATE_LIMIT,
+                q -> q.addParameter(workflowName).addParameter(rateLimitKey).executeScalar());
+    }
+
+    private long getActiveWorkflowRateLimitCount(
+            Connection connection, String workflowName, String rateLimitKey) {
+        // @formatter:off
+        String GET_ACTIVE_WORKFLOW_RATE_LIMIT_COUNT =
+                "SELECT COUNT(*) FROM workflow_pending wp "
+                        + "INNER JOIN workflow w ON w.workflow_id = wp.workflow_id "
+                        + "WHERE wp.workflow_type = ? "
+                        + "AND COALESCE(w.json_data::jsonb ->> 'rateLimitKey', "
+                        + "w.json_data::jsonb #>> '{workflowDefinition,rateLimitConfig,rateLimitKey}') = ? "
+                        + "AND COALESCE((w.json_data::jsonb ->> 'rateLimited')::boolean, false) = false";
+        // @formatter:on
+
+        return query(
+                connection,
+                GET_ACTIVE_WORKFLOW_RATE_LIMIT_COUNT,
+                q -> q.addParameter(workflowName).addParameter(rateLimitKey).executeCount());
+    }
+
+    private List<WorkflowModel> getQueuedRateLimitedWorkflows(
+            Connection connection, String workflowName, String rateLimitKey, int limit) {
+        // @formatter:off
+        String GET_QUEUED_WORKFLOW_RATE_LIMITS =
+                "SELECT w.json_data FROM workflow_pending wp "
+                        + "INNER JOIN workflow w ON w.workflow_id = wp.workflow_id "
+                        + "WHERE wp.workflow_type = ? "
+                        + "AND COALESCE(w.json_data::jsonb ->> 'rateLimitKey', "
+                        + "w.json_data::jsonb #>> '{workflowDefinition,rateLimitConfig,rateLimitKey}') = ? "
+                        + "AND COALESCE((w.json_data::jsonb ->> 'rateLimited')::boolean, false) = true "
+                        + "ORDER BY w.created_on, w.workflow_id "
+                        + "LIMIT ? FOR UPDATE SKIP LOCKED";
+        // @formatter:on
+
+        return query(
+                connection,
+                GET_QUEUED_WORKFLOW_RATE_LIMITS,
+                q ->
+                        q.addParameter(workflowName)
+                                .addParameter(rateLimitKey)
+                                .addParameter(limit)
+                                .executeAndFetch(WorkflowModel.class));
     }
 
     private void updateTask(Connection connection, TaskModel task) {

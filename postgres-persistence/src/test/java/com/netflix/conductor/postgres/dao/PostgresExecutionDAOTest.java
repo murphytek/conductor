@@ -26,6 +26,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.netflix.conductor.common.config.TestObjectMapperConfiguration;
+import com.netflix.conductor.common.metadata.workflow.RateLimitConfig;
 import com.netflix.conductor.common.metadata.workflow.WorkflowDef;
 import com.netflix.conductor.dao.ExecutionDAO;
 import com.netflix.conductor.dao.ExecutionDAOTest;
@@ -35,7 +36,9 @@ import com.netflix.conductor.postgres.config.PostgresConfiguration;
 import com.google.common.collect.Iterables;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @ContextConfiguration(
         classes = {
@@ -105,6 +108,50 @@ public class PostgresExecutionDAOTest extends ExecutionDAOTest {
         assertEquals(1, execDao.getPendingWorkflowCount("workflow"));
         ids.forEach(wfId -> execDao.removeWorkflowWithExpiry(wfId, 1));
         Mockito.verify(execDao, Mockito.timeout(10 * 1000)).removeWorkflow(Iterables.getLast(ids));
+    }
+
+    @Test
+    public void testWorkflowRateLimitQueuesAndReleasesByKey() {
+        WorkflowDef def = new WorkflowDef();
+        def.setName("workflow_rate_limit_jtest");
+        def.setVersion(1);
+        RateLimitConfig rateLimitConfig = new RateLimitConfig();
+        rateLimitConfig.setRateLimitKey("tenantA");
+        rateLimitConfig.setConcurrentExecLimit(1);
+        def.setRateLimitConfig(rateLimitConfig);
+
+        WorkflowModel activeWorkflow = createTestWorkflow();
+        activeWorkflow.setWorkflowDefinition(def);
+        activeWorkflow.setStatus(WorkflowModel.Status.RUNNING);
+        activeWorkflow.setRateLimitKey("tenantA");
+        activeWorkflow.setTasks(List.of());
+
+        WorkflowModel queuedWorkflow = createTestWorkflow();
+        queuedWorkflow.setWorkflowDefinition(def);
+        queuedWorkflow.setStatus(WorkflowModel.Status.RUNNING);
+        queuedWorkflow.setRateLimitKey("tenantA");
+        queuedWorkflow.setTasks(List.of());
+
+        getExecutionDAO().createWorkflow(activeWorkflow);
+        getExecutionDAO().createWorkflow(queuedWorkflow);
+
+        assertFalse(activeWorkflow.isRateLimited());
+        assertTrue(queuedWorkflow.isRateLimited());
+
+        activeWorkflow.setStatus(WorkflowModel.Status.COMPLETED);
+        getExecutionDAO().updateWorkflow(activeWorkflow);
+
+        List<WorkflowModel> releasedWorkflows =
+                getExecutionDAO()
+                        .releaseRateLimitedWorkflows("workflow_rate_limit_jtest", "tenantA", 1);
+
+        assertEquals(1, releasedWorkflows.size());
+        assertEquals(queuedWorkflow.getWorkflowId(), releasedWorkflows.get(0).getWorkflowId());
+        assertFalse(releasedWorkflows.get(0).isRateLimited());
+        assertFalse(
+                getExecutionDAO()
+                        .getWorkflow(queuedWorkflow.getWorkflowId(), false)
+                        .isRateLimited());
     }
 
     @Override

@@ -39,7 +39,8 @@ public interface SecretDAO {
     // --- Workflow-scoped overloads ---
 
     /** Create or update a workflow-scoped secret. */
-    void putSecret(String name, String value, String createdBy, String description, String workflowName);
+    void putSecret(
+            String name, String value, String createdBy, String description, String workflowName);
 
     /** Get the decrypted value of a workflow-scoped secret, or null if not found. */
     String getSecretValue(String name, String workflowName);

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.netflix.conductor.annotations.Trace;
 import com.netflix.conductor.annotations.VisibleForTesting;
 import com.netflix.conductor.common.metadata.tasks.*;
+import com.netflix.conductor.common.metadata.workflow.RateLimitConfig;
 import com.netflix.conductor.common.metadata.workflow.RerunWorkflowRequest;
 import com.netflix.conductor.common.metadata.workflow.SkipTaskRequest;
 import com.netflix.conductor.common.metadata.workflow.WorkflowDef;
@@ -595,6 +596,7 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             expediteLazyWorkflowEvaluation(workflow.getParentWorkflowId());
         }
 
+        releaseRateLimitedWorkflowExecutions(workflow);
         executionLockService.releaseLock(workflow.getWorkflowId());
         executionLockService.deleteLock(workflow.getWorkflowId());
         return workflow;
@@ -695,6 +697,8 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
                         workflowId,
                         e);
             }
+
+            releaseRateLimitedWorkflowExecutions(workflow);
 
             if (workflow.hasParent()) {
                 updateParentWorkflowTask(workflow);
@@ -1121,6 +1125,11 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             if (!workflow.getStatus().isSuccessful()) {
                 cancelNonTerminalTasks(workflow);
             }
+            return workflow;
+        }
+
+        if (workflow.isRateLimited()) {
+            LOGGER.debug("Workflow {} is queued by workflow rate limit", workflow.getWorkflowId());
             return workflow;
         }
 
@@ -1979,6 +1988,8 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             workflow.setExternalInputPayloadStoragePath(externalInputPayloadStoragePath);
         }
 
+        applyWorkflowRateLimitConfig(workflow);
+
         try {
             createAndEvaluate(workflow);
             Monitors.recordWorkflowStartSuccess(
@@ -2014,11 +2025,137 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
                     workflow.getWorkflowName(),
                     workflow.getWorkflowId());
             executionDAOFacade.populateWorkflowAndTaskPayloadData(workflow);
+            if (workflow.isRateLimited()) {
+                if (isRejectRateLimitPolicy(workflow)) {
+                    throw new ConflictException(
+                            "Workflow %s rate limit exceeded for key %s",
+                            workflow.getWorkflowName(), workflow.getRateLimitKey());
+                }
+                notifyWorkflowStatusListener(workflow, WorkflowEventType.STARTED);
+                LOGGER.info(
+                        "Workflow {} queued by workflow rate limit key {}",
+                        workflow.getWorkflowId(),
+                        workflow.getRateLimitKey());
+                return;
+            }
             notifyWorkflowStatusListener(workflow, WorkflowEventType.STARTED);
             decide(workflow);
         } finally {
             executionLockService.releaseLock(workflow.getWorkflowId());
         }
+    }
+
+    private void applyWorkflowRateLimitConfig(WorkflowModel workflow) {
+        RateLimitConfig rateLimitConfig = getWorkflowRateLimitConfig(workflow);
+        if (rateLimitConfig == null || rateLimitConfig.getConcurrentExecLimit() <= 0) {
+            workflow.setRateLimited(false);
+            workflow.setRateLimitKey(null);
+            return;
+        }
+
+        String rateLimitKey = resolveWorkflowRateLimitKey(workflow, rateLimitConfig);
+        if (StringUtils.isBlank(rateLimitKey)) {
+            workflow.setRateLimited(false);
+            workflow.setRateLimitKey(null);
+            return;
+        }
+
+        workflow.setRateLimitKey(rateLimitKey);
+        workflow.setRateLimited(false);
+    }
+
+    private String resolveWorkflowRateLimitKey(
+            WorkflowModel workflow, RateLimitConfig rateLimitConfig) {
+        String rateLimitKey = rateLimitConfig.getRateLimitKey();
+        if (StringUtils.isBlank(rateLimitKey)) {
+            return null;
+        }
+
+        if (!rateLimitKey.contains("${")) {
+            return resolveNamedWorkflowRateLimitKey(workflow, rateLimitKey);
+        }
+
+        Map<String, Object> workflowParams = new HashMap<>();
+        workflowParams.put("input", workflow.getInput());
+        workflowParams.put("output", workflow.getOutput());
+        workflowParams.put("status", workflow.getStatus());
+        workflowParams.put("workflowId", workflow.getWorkflowId());
+        workflowParams.put("parentWorkflowId", workflow.getParentWorkflowId());
+        workflowParams.put("parentWorkflowTaskId", workflow.getParentWorkflowTaskId());
+        workflowParams.put("workflowType", workflow.getWorkflowName());
+        workflowParams.put("name", workflow.getWorkflowName());
+        workflowParams.put("version", workflow.getWorkflowVersion());
+        workflowParams.put("correlationId", workflow.getCorrelationId());
+        workflowParams.put("variables", workflow.getVariables());
+
+        Map<String, Object> inputMap = new HashMap<>();
+        inputMap.put("workflow", workflowParams);
+
+        Map<String, Object> keyExpression = new HashMap<>();
+        keyExpression.put("rateLimitKey", rateLimitKey);
+        Object resolved = parametersUtils.replace(keyExpression, inputMap).get("rateLimitKey");
+        return resolved == null ? null : resolved.toString();
+    }
+
+    private String resolveNamedWorkflowRateLimitKey(WorkflowModel workflow, String rateLimitKey) {
+        switch (rateLimitKey) {
+            case "name":
+            case "workflowName":
+            case "workflowType":
+                return workflow.getWorkflowName();
+            case "version":
+                return String.valueOf(workflow.getWorkflowVersion());
+            case "correlationId":
+                return workflow.getCorrelationId();
+            case "workflowId":
+                return workflow.getWorkflowId();
+            default:
+                return rateLimitKey;
+        }
+    }
+
+    private void releaseRateLimitedWorkflowExecutions(WorkflowModel workflow) {
+        RateLimitConfig rateLimitConfig = getWorkflowRateLimitConfig(workflow);
+        if (rateLimitConfig == null
+                || rateLimitConfig.getConcurrentExecLimit() <= 0
+                || workflow.isRateLimited()
+                || StringUtils.isBlank(workflow.getRateLimitKey())) {
+            return;
+        }
+
+        List<WorkflowModel> releasedWorkflows =
+                executionDAOFacade.releaseRateLimitedWorkflows(
+                        workflow.getWorkflowName(),
+                        workflow.getRateLimitKey(),
+                        rateLimitConfig.getConcurrentExecLimit());
+        releasedWorkflows.forEach(
+                releasedWorkflow -> {
+                    try {
+                        LOGGER.info(
+                                "Releasing workflow {} queued by workflow rate limit key {}",
+                                releasedWorkflow.getWorkflowId(),
+                                releasedWorkflow.getRateLimitKey());
+                        decide(releasedWorkflow.getWorkflowId());
+                    } catch (RuntimeException e) {
+                        LOGGER.error(
+                                "Unable to evaluate released workflow {}",
+                                releasedWorkflow.getWorkflowId(),
+                                e);
+                    }
+                });
+    }
+
+    private boolean isRejectRateLimitPolicy(WorkflowModel workflow) {
+        RateLimitConfig rateLimitConfig = getWorkflowRateLimitConfig(workflow);
+        return rateLimitConfig != null
+                && RateLimitConfig.RateLimitPolicy.REJECT.equals(rateLimitConfig.getPolicy());
+    }
+
+    private RateLimitConfig getWorkflowRateLimitConfig(WorkflowModel workflow) {
+        if (workflow.getWorkflowDefinition() == null) {
+            return null;
+        }
+        return workflow.getWorkflowDefinition().getRateLimitConfig();
     }
 
     /**

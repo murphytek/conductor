@@ -241,6 +241,28 @@ public class ExecutionDAOFacade {
         return executionDAO.getPendingWorkflowCount(workflowName);
     }
 
+    public List<WorkflowModel> releaseRateLimitedWorkflows(
+            String workflowName, String rateLimitKey, int concurrentExecLimit) {
+        List<WorkflowModel> workflows =
+                executionDAO.releaseRateLimitedWorkflows(
+                        workflowName, rateLimitKey, concurrentExecLimit);
+        workflows.forEach(
+                workflowModel -> {
+                    queueDAO.push(
+                            DECIDER_QUEUE,
+                            workflowModel.getWorkflowId(),
+                            workflowModel.getPriority(),
+                            0);
+                    if (properties.isAsyncIndexingEnabled()) {
+                        indexDAO.asyncIndexWorkflow(
+                                new WorkflowSummary(workflowModel.toWorkflow()));
+                    } else {
+                        indexDAO.indexWorkflow(new WorkflowSummary(workflowModel.toWorkflow()));
+                    }
+                });
+        return workflows;
+    }
+
     /**
      * Creates a new workflow in the data store
      *
@@ -251,11 +273,13 @@ public class ExecutionDAOFacade {
         externalizeWorkflowData(workflowModel);
         executionDAO.createWorkflow(workflowModel);
         // Add to decider queue
-        queueDAO.push(
-                DECIDER_QUEUE,
-                workflowModel.getWorkflowId(),
-                workflowModel.getPriority(),
-                properties.getWorkflowOffsetTimeout().getSeconds());
+        if (!workflowModel.isRateLimited()) {
+            queueDAO.push(
+                    DECIDER_QUEUE,
+                    workflowModel.getWorkflowId(),
+                    workflowModel.getPriority(),
+                    properties.getWorkflowOffsetTimeout().getSeconds());
+        }
         if (properties.isAsyncIndexingEnabled()) {
             indexDAO.asyncIndexWorkflow(new WorkflowSummary(workflowModel.toWorkflow()));
         } else {

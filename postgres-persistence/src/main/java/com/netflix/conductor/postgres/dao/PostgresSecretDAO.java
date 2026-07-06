@@ -24,7 +24,6 @@ import org.springframework.retry.support.RetryTemplate;
 import com.netflix.conductor.core.encryption.EncryptedEnvelope;
 import com.netflix.conductor.core.encryption.FieldEncryptionService;
 import com.netflix.conductor.dao.SecretDAO;
-
 import com.netflix.conductor.postgres.util.Query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
