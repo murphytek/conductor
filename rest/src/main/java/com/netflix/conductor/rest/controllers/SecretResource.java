@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.netflix.conductor.common.metadata.secrets.SecretRequest;
+import com.netflix.conductor.dao.SecretDAO;
 import com.netflix.conductor.service.SecretService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +29,7 @@ import static com.netflix.conductor.rest.config.RequestMappingConstants.SECRETS;
 
 @RestController
 @RequestMapping(SECRETS)
-@ConditionalOnBean(SecretService.class)
+@ConditionalOnBean(SecretDAO.class)
 public class SecretResource {
 
     private final SecretService secretService;
