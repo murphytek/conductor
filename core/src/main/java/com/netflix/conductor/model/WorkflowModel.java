@@ -106,6 +106,10 @@ public class WorkflowModel {
     // Capture the failed taskId if the workflow execution failed because of task failure
     private String failedTaskId;
 
+    private String rateLimitKey;
+
+    private boolean rateLimited;
+
     private Status previousStatus;
 
     @JsonIgnore private Map<String, Object> input = new HashMap<>();
@@ -409,6 +413,22 @@ public class WorkflowModel {
         this.failedTaskId = failedTaskId;
     }
 
+    public String getRateLimitKey() {
+        return rateLimitKey;
+    }
+
+    public void setRateLimitKey(String rateLimitKey) {
+        this.rateLimitKey = rateLimitKey;
+    }
+
+    public boolean isRateLimited() {
+        return rateLimited;
+    }
+
+    public void setRateLimited(boolean rateLimited) {
+        this.rateLimited = rateLimited;
+    }
+
     /**
      * Convenience method for accessing the workflow definition name.
      *
@@ -532,7 +552,9 @@ public class WorkflowModel {
                 && Objects.equals(getCreateTime(), that.getCreateTime())
                 && Objects.equals(getUpdatedTime(), that.getUpdatedTime())
                 && Objects.equals(getCreatedBy(), that.getCreatedBy())
-                && Objects.equals(getUpdatedBy(), that.getUpdatedBy());
+                && Objects.equals(getUpdatedBy(), that.getUpdatedBy())
+                && Objects.equals(getRateLimitKey(), that.getRateLimitKey())
+                && isRateLimited() == that.isRateLimited();
     }
 
     @Override
@@ -564,7 +586,9 @@ public class WorkflowModel {
                 getCreateTime(),
                 getUpdatedTime(),
                 getCreatedBy(),
-                getUpdatedBy());
+                getUpdatedBy(),
+                getRateLimitKey(),
+                isRateLimited());
     }
 
     public Workflow toWorkflow() {

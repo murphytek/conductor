@@ -166,6 +166,19 @@ public interface ExecutionDAO {
     long getPendingWorkflowCount(String workflowName);
 
     /**
+     * Releases queued workflow executions for a workflow-level rate limit.
+     *
+     * @param workflowName Name of the workflow
+     * @param rateLimitKey Resolved workflow rate limit key
+     * @param concurrentExecLimit Maximum number of active executions for the key
+     * @return workflows that were released and can now be evaluated
+     */
+    default List<WorkflowModel> releaseRateLimitedWorkflows(
+            String workflowName, String rateLimitKey, int concurrentExecLimit) {
+        return List.of();
+    }
+
+    /**
      * @param taskDefName Name of the task
      * @return Number of task currently in IN_PROGRESS status
      */
