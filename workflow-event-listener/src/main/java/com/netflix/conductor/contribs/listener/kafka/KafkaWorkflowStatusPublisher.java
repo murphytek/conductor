@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
+import com.netflix.conductor.common.run.Workflow;
 import com.netflix.conductor.common.run.WorkflowSummary;
 import com.netflix.conductor.common.run.WorkflowSummaryExtended;
 import com.netflix.conductor.core.listener.WorkflowStatusListener;
@@ -35,22 +36,28 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(KafkaWorkflowStatusPublisher.class);
-    private final KafkaProducer<String, String> producer;
+    private final Producer<String, String> producer;
     private final Map<String, String> eventTopics;
     private final String defaultTopic;
     private final KafkaWorkflowStatusPublisherProperties properties;
     private final ObjectMapper objectMapper;
+    private final PayloadRedactor redactor;
 
     public KafkaWorkflowStatusPublisher(
             KafkaWorkflowStatusPublisherProperties properties, ObjectMapper objectMapper) {
+        this(properties, objectMapper, new KafkaProducer<>(properties.toProducerConfig()));
+    }
+
+    KafkaWorkflowStatusPublisher(
+            KafkaWorkflowStatusPublisherProperties properties,
+            ObjectMapper objectMapper,
+            Producer<String, String> producer) {
         this.eventTopics = properties.getEventTopics();
         this.defaultTopic = properties.getDefaultTopic();
         this.properties = properties;
         this.objectMapper = objectMapper;
-
-        // Configure Kafka Producer
-        Map<String, Object> producerConfig = properties.toProducerConfig();
-        this.producer = new KafkaProducer<>(producerConfig);
+        this.redactor = new PayloadRedactor(properties.getRedactKeyPattern(), objectMapper);
+        this.producer = producer;
     }
 
     @Override
@@ -167,9 +174,11 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
             String topic = eventTopics.getOrDefault(eventType.toString(), defaultTopic);
             LOGGER.debug("Publish event {} to topic {}", eventType.toString(), topic);
 
-            // Convert workflow to summary
-            WorkflowSummaryExtended workflowSummary =
-                    new WorkflowSummaryExtended(workflow.toWorkflow());
+            // Convert workflow to summary, with secrets in its input and output masked
+            Workflow summarized = workflow.toWorkflow();
+            summarized.setInput(redactor.redact(summarized.getInput()));
+            summarized.setOutput(redactor.redact(summarized.getOutput()));
+            WorkflowSummaryExtended workflowSummary = new WorkflowSummaryExtended(summarized);
             String jsonMessage = toJson(eventType, workflow, workflowSummary, false);
             if (jsonMessage.getBytes(StandardCharsets.UTF_8).length
                     > properties.getMaxMessageBytes()) {

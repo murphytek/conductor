@@ -40,8 +40,7 @@ public class KafkaTaskStatusPublisherTest {
 
     @Test
     public void smallEventCarriesTaskData() throws Exception {
-        new KafkaTaskStatusPublisher(queue, objectMapper, 1000)
-                .onTaskCompleted(task(Map.of("answer", "ok")));
+        publisher().onTaskCompleted(task(Map.of("answer", "ok")));
 
         Map<String, Object> event = published();
         assertEquals("task-1", event.get("taskId"));
@@ -53,9 +52,30 @@ public class KafkaTaskStatusPublisherTest {
     }
 
     @Test
+    public void secretsInTaskDataAreMasked() throws Exception {
+        TaskModel task = task(Map.of("answer", "ok"));
+        task.setInputData(
+                Map.of(
+                        "prompt",
+                        "p",
+                        "environment",
+                        Map.of("ANTHROPIC_API_KEY", "sk-secret", "MODEL", "opus")));
+        publisher().onTaskCompleted(task);
+
+        Map<String, Object> event = published();
+        assertEquals(
+                Map.of(
+                        "prompt",
+                        "p",
+                        "environment",
+                        Map.of("ANTHROPIC_API_KEY", PayloadRedactor.REDACTED, "MODEL", "opus")),
+                event.get("inputData"));
+        assertEquals(Map.of("answer", "ok"), event.get("outputData"));
+    }
+
+    @Test
     public void oversizedEventIsSentWithoutTaskData() throws Exception {
-        new KafkaTaskStatusPublisher(queue, objectMapper, 1000)
-                .onTaskCompleted(task(Map.of("answer", "x".repeat(5000))));
+        publisher().onTaskCompleted(task(Map.of("answer", "x".repeat(5000))));
 
         Map<String, Object> event = published();
         assertEquals("task-1", event.get("taskId"));
@@ -63,6 +83,14 @@ public class KafkaTaskStatusPublisherTest {
         assertFalse(event.containsKey("inputData"));
         assertFalse(event.containsKey("outputData"));
         assertEquals(Boolean.TRUE, event.get("payloadTruncated"));
+    }
+
+    private KafkaTaskStatusPublisher publisher() {
+        return new KafkaTaskStatusPublisher(
+                queue,
+                objectMapper,
+                1000,
+                new PayloadRedactor(PayloadRedactor.DEFAULT_KEY_PATTERN, objectMapper));
     }
 
     private TaskModel task(Map<String, Object> output) {

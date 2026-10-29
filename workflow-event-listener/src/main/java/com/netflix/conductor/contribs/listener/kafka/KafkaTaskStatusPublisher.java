@@ -38,12 +38,17 @@ public class KafkaTaskStatusPublisher implements TaskStatusListener {
     private final KafkaObservableQueue kafkaQueue;
     private final ObjectMapper objectMapper;
     private final int maxMessageBytes;
+    private final PayloadRedactor redactor;
 
     public KafkaTaskStatusPublisher(
-            KafkaObservableQueue kafkaQueue, ObjectMapper objectMapper, int maxMessageBytes) {
+            KafkaObservableQueue kafkaQueue,
+            ObjectMapper objectMapper,
+            int maxMessageBytes,
+            PayloadRedactor redactor) {
         this.kafkaQueue = kafkaQueue;
         this.objectMapper = objectMapper;
         this.maxMessageBytes = maxMessageBytes;
+        this.redactor = redactor;
     }
 
     @Override
@@ -110,8 +115,8 @@ public class KafkaTaskStatusPublisher implements TaskStatusListener {
             payload.put("startTime", task.getStartTime());
             payload.put("updateTime", task.getUpdateTime());
             payload.put("endTime", task.getEndTime());
-            payload.put("inputData", task.getInputData());
-            payload.put("outputData", task.getOutputData());
+            payload.put("inputData", redactor.redact(task.getInputData()));
+            payload.put("outputData", redactor.redact(task.getOutputData()));
 
             String json = objectMapper.writeValueAsString(payload);
             if (json.getBytes(StandardCharsets.UTF_8).length > maxMessageBytes) {

@@ -38,6 +38,12 @@ public class KafkaWorkflowStatusPublisherProperties {
      */
     private int maxMessageBytes = 900_000;
 
+    /**
+     * Keys whose values are masked in the workflow input and output of an event (a regular
+     * expression searched for in each key). Blank publishes them unmasked.
+     */
+    private String redactKeyPattern = PayloadRedactor.DEFAULT_KEY_PATTERN;
+
     public Map<String, Object> getProducer() {
         return producer;
     }
@@ -60,6 +66,14 @@ public class KafkaWorkflowStatusPublisherProperties {
 
     public void setMaxMessageBytes(int maxMessageBytes) {
         this.maxMessageBytes = maxMessageBytes;
+    }
+
+    public String getRedactKeyPattern() {
+        return redactKeyPattern;
+    }
+
+    public void setRedactKeyPattern(String redactKeyPattern) {
+        this.redactKeyPattern = redactKeyPattern;
     }
 
     public Map<String, String> getEventTopics() {

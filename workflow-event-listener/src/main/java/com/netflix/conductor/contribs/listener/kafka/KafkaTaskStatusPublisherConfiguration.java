@@ -45,10 +45,18 @@ public class KafkaTaskStatusPublisherConfiguration {
             @Value("${conductor.task-status-listener.kafka.topic:conductor.task.status.v1}")
                     String topic,
             @Value("${conductor.task-status-listener.kafka.max-message-bytes:900000}")
-                    int maxMessageBytes) {
+                    int maxMessageBytes,
+            @Value("${conductor.task-status-listener.kafka.redact-key-pattern:#{null}}")
+                    String redactKeyPattern) {
         LOGGER.info("Configuring KafkaTaskStatusPublisher for topic '{}'", topic);
         KafkaObservableQueue queue =
                 new KafkaObservableQueue.Builder(kafkaProperties).build(topic, null);
-        return new KafkaTaskStatusPublisher(queue, objectMapper, maxMessageBytes);
+        PayloadRedactor redactor =
+                new PayloadRedactor(
+                        redactKeyPattern != null
+                                ? redactKeyPattern
+                                : PayloadRedactor.DEFAULT_KEY_PATTERN,
+                        objectMapper);
+        return new KafkaTaskStatusPublisher(queue, objectMapper, maxMessageBytes, redactor);
     }
 }
