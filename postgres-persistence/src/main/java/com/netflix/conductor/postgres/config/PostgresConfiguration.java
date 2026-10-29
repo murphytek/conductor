@@ -77,15 +77,22 @@ public class PostgresConfiguration {
 
         config.locations(locations.toArray(new String[0]));
 
-        return config.configuration(Map.of("flyway.postgresql.transactional.lock", "false"))
+        config.configuration(Map.of("flyway.postgresql.transactional.lock", "false"))
                 .schemas(properties.getSchema())
                 .dataSource(dataSource)
                 .outOfOrder(true)
                 .baselineOnMigrate(true)
                 // default baseline version 1 would skip V1 when the scheduler flyway
                 // (same schema, own history table) migrates first
-                .baselineVersion("0")
-                .load();
+                .baselineVersion("0");
+
+        if (!properties.isApplyDataMigrations()) {
+            // Data migrations an earlier start already applied are not on the locations now, and
+            // Flyway would fail validation with "applied migration not resolved locally".
+            config.ignoreMigrationPatterns("*:future", "versioned:missing");
+        }
+
+        return config.load();
     }
 
     @Bean
