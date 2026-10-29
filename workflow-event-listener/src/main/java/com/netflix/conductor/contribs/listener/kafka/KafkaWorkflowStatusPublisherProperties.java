@@ -32,6 +32,12 @@ public class KafkaWorkflowStatusPublisherProperties {
      */
     private Map<String, String> eventTopics = new HashMap<>();
 
+    /**
+     * Largest event to send, in bytes. A larger event is sent without the workflow input and output
+     * so it stays under the broker's message size limit (1 MiB by default).
+     */
+    private int maxMessageBytes = 900_000;
+
     public Map<String, Object> getProducer() {
         return producer;
     }
@@ -46,6 +52,14 @@ public class KafkaWorkflowStatusPublisherProperties {
 
     public void setDefaultTopic(String defaultTopic) {
         this.defaultTopic = defaultTopic;
+    }
+
+    public int getMaxMessageBytes() {
+        return maxMessageBytes;
+    }
+
+    public void setMaxMessageBytes(int maxMessageBytes) {
+        this.maxMessageBytes = maxMessageBytes;
     }
 
     public Map<String, String> getEventTopics() {

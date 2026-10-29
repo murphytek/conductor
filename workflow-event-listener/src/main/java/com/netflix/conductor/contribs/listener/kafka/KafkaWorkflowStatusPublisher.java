@@ -12,7 +12,9 @@
  */
 package com.netflix.conductor.contribs.listener.kafka;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.kafka.clients.producer.*;
@@ -61,6 +63,57 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
                 LOGGER.error("Error shutting down Kafka producer", e);
             }
         }
+    }
+
+    /*
+     * Always publish, regardless of the per-workflow workflowStatusListenerEnabled flag, so the
+     * Kafka topic carries the lifecycle of every workflow and downstream services can track all
+     * of them.
+     */
+
+    @Override
+    public void onWorkflowStartedIfEnabled(WorkflowModel workflow) {
+        onWorkflowStarted(workflow);
+    }
+
+    @Override
+    public void onWorkflowRestartedIfEnabled(WorkflowModel workflow) {
+        onWorkflowRestarted(workflow);
+    }
+
+    @Override
+    public void onWorkflowRerunIfEnabled(WorkflowModel workflow) {
+        onWorkflowRerun(workflow);
+    }
+
+    @Override
+    public void onWorkflowRetriedIfEnabled(WorkflowModel workflow) {
+        onWorkflowRetried(workflow);
+    }
+
+    @Override
+    public void onWorkflowCompletedIfEnabled(WorkflowModel workflow) {
+        onWorkflowCompleted(workflow);
+    }
+
+    @Override
+    public void onWorkflowTerminatedIfEnabled(WorkflowModel workflow) {
+        onWorkflowTerminated(workflow);
+    }
+
+    @Override
+    public void onWorkflowFinalizedIfEnabled(WorkflowModel workflow) {
+        onWorkflowFinalized(workflow);
+    }
+
+    @Override
+    public void onWorkflowPausedIfEnabled(WorkflowModel workflow) {
+        onWorkflowPaused(workflow);
+    }
+
+    @Override
+    public void onWorkflowResumedIfEnabled(WorkflowModel workflow) {
+        onWorkflowResumed(workflow);
     }
 
     @Override
@@ -115,16 +168,18 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
             LOGGER.debug("Publish event {} to topic {}", eventType.toString(), topic);
 
             // Convert workflow to summary
-            WorkflowSummary workflowSummary = new WorkflowSummaryExtended(workflow.toWorkflow());
-
-            // Construct JSON message
-            Map<String, Object> message =
-                    Map.of(
-                            "workflowName", workflow.getWorkflowName(),
-                            "eventType", eventType.toString(),
-                            "payload", workflowSummary);
-
-            String jsonMessage = objectMapper.writeValueAsString(message);
+            WorkflowSummaryExtended workflowSummary =
+                    new WorkflowSummaryExtended(workflow.toWorkflow());
+            String jsonMessage = toJson(eventType, workflow, workflowSummary, false);
+            if (jsonMessage.getBytes(StandardCharsets.UTF_8).length
+                    > properties.getMaxMessageBytes()) {
+                // Consumers read the status fields; drop the workflow input and output rather
+                // than lose the whole event to the broker's message size limit.
+                workflowSummary.setInputMap(null);
+                workflowSummary.setOutputMap(null);
+                jsonMessage = toJson(eventType, workflow, workflowSummary, true);
+            }
+            int messageSize = jsonMessage.length();
 
             // Create Kafka record
             ProducerRecord<String, String> record =
@@ -136,7 +191,11 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
                     (metadata, exception) -> {
                         if (exception != null) {
                             LOGGER.error(
-                                    "Failed to publish workflow event: {}", jsonMessage, exception);
+                                    "Failed to publish workflow event {} for workflow {} ({} chars)",
+                                    eventType,
+                                    workflow.getWorkflowId(),
+                                    messageSize,
+                                    exception);
                         } else {
                             LOGGER.debug(
                                     "Published event: {}, Topic: {}, Partition: {}, Offset: {}",
@@ -153,5 +212,21 @@ public class KafkaWorkflowStatusPublisher implements WorkflowStatusListener, Dis
         } catch (Exception e) {
             LOGGER.error("Unexpected error publishing event {}: {}", eventType, e.getMessage(), e);
         }
+    }
+
+    private String toJson(
+            WorkflowEventType eventType,
+            WorkflowModel workflow,
+            WorkflowSummary workflowSummary,
+            boolean payloadTruncated)
+            throws JsonProcessingException {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("workflowName", workflow.getWorkflowName());
+        message.put("eventType", eventType.toString());
+        message.put("payload", workflowSummary);
+        if (payloadTruncated) {
+            message.put("payloadTruncated", true);
+        }
+        return objectMapper.writeValueAsString(message);
     }
 }
