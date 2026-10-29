@@ -35,7 +35,8 @@ RUN if [ "$PREBUILT" = "true" ]; then \
 # ===========================================================================================================
 # 1. UI builder stage
 # ===========================================================================================================
-FROM node:lts AS ui-builder
+# Node 25+ no longer bundles corepack, which the build below uses for pnpm.
+FROM node:24 AS ui-builder
 
 ARG PREBUILT=false
 ARG SKIP_UI=false
